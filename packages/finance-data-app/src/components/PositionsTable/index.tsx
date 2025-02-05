@@ -7,7 +7,7 @@ import { It, iterateFormatted, type MaybeAsyncIterable } from 'react-async-itera
 import {
   asyncIterChannelize,
   type AsyncIterableChannelSubject,
-} from '../../../../../../react-async-iterators/src/asyncIterChannelize/index.ts';
+} from '../../utils/asyncIterChannelize/index.ts';
 import { commonDecimalNumCurrencyFormat } from './utils/commonDecimalNumCurrencyFormat.tsx';
 import { SymbolNameTag } from './components/SymbolNameTag/index.tsx';
 import { PositionSizeDisplay } from './components/PositionSizeDisplay/index.tsx';
