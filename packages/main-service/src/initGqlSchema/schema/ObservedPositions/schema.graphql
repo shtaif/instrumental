@@ -27,7 +27,6 @@ type ObservedPosition {
   totalRealizedAmount: Float!
   totalRealizedProfitOrLossAmount: Float!
   totalRealizedProfitOrLossRate: Float!
-  currentPortfolioPortion: Float
   breakEvenPrice: Float
   priceData: InstrumentMarketData!
   marketValue: Float!

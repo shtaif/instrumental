@@ -32,7 +32,6 @@ function createObservedStatsObjectsLoader(): DataLoader<
             totalRealizedAmount: true,
             totalRealizedProfitOrLossAmount: true,
             totalRealizedProfitOrLossRate: true,
-            currentPortfolioPortion: true,
             breakEvenPrice: true,
             lastChangedAt: true,
           },
