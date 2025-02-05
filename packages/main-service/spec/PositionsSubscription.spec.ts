@@ -1423,6 +1423,486 @@ describe('Subscription.positions', () => {
     });
   });
 
+  describe('With `unrealizedDayPnl` field', () => {
+    it('Emits updates correctly in conjunction with changes to position symbols market data', async () => {
+      await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
+      await PositionChangeModel.bulkCreate(
+        reusablePositions.slice(0, 2).map(h => ({
+          ...h,
+          totalLotCount: 1,
+          totalQuantity: 3,
+          totalPresentInvestedAmount: 30,
+        }))
+      );
+
+      const emissionsPromise = asyncPipe(
+        gqlWsClientIterateDisposable({
+          query: /* GraphQL */ `
+            subscription {
+              positions {
+                data {
+                  symbol
+                  unrealizedDayPnl {
+                    amount
+                    percent
+                  }
+                }
+              }
+            }
+          `,
+        }),
+        itTake(3),
+        itCollect
+      );
+
+      await using mockMarketData = mockMarketDataControl.start();
+      await mockMarketData.next([
+        {
+          ADBE: { regularMarketChange: 1 },
+          AAPL: { regularMarketChange: 1 },
+        },
+        {
+          ADBE: { regularMarketChange: 2 },
+        },
+        {
+          AAPL: { regularMarketChange: 2 },
+        },
+      ]);
+
+      const emissions = await emissionsPromise;
+
+      expect(emissions).toStrictEqual([
+        {
+          data: {
+            positions: [
+              {
+                data: {
+                  symbol: 'AAPL',
+                  unrealizedDayPnl: { amount: 3, percent: 10 },
+                },
+              },
+              {
+                data: {
+                  symbol: 'ADBE',
+                  unrealizedDayPnl: { amount: 3, percent: 10 },
+                },
+              },
+            ],
+          },
+        },
+        {
+          data: {
+            positions: [
+              {
+                data: {
+                  symbol: 'ADBE',
+                  unrealizedDayPnl: { amount: 6, percent: 20 },
+                },
+              },
+            ],
+          },
+        },
+        {
+          data: {
+            positions: [
+              {
+                data: {
+                  symbol: 'AAPL',
+                  unrealizedDayPnl: { amount: 6, percent: 20 },
+                },
+              },
+            ],
+          },
+        },
+      ]);
+    });
+
+    it('Emits updates correctly in conjunction with changes to underlying positions', async () => {
+      await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
+      await PositionChangeModel.bulkCreate(
+        reusablePositions.slice(0, 2).map(h => ({
+          ...h,
+          totalLotCount: 1,
+          totalQuantity: 2,
+          totalPresentInvestedAmount: 16,
+        }))
+      );
+
+      await using subscription = gqlWsClientIterateDisposable({
+        query: /* GraphQL */ `
+          subscription {
+            positions {
+              data {
+                symbol
+                unrealizedDayPnl {
+                  amount
+                  percent
+                }
+              }
+            }
+          }
+        `,
+      });
+
+      await using mockMarketData = mockMarketDataControl.start();
+      await mockMarketData.next([
+        {
+          ADBE: { regularMarketChange: 1 },
+          AAPL: { regularMarketChange: 1 },
+        },
+      ]);
+
+      const emissions: any[] = [(await subscription.next()).value];
+
+      for (const applyNextChanges of [
+        async () => {
+          await TradeRecordModel.create(reusableTradeDatas[2]);
+          await PositionChangeModel.create({
+            ...reusablePositions[2],
+            symbol: 'ADBE',
+            totalLotCount: 2,
+            totalQuantity: 4,
+            totalPresentInvestedAmount: 38,
+          });
+          await publishUserHoldingChangedRedisEvent({
+            ownerId: mockUserId1,
+            holdingStats: { set: [reusablePositions[2].symbol] },
+          });
+        },
+        async () => {
+          await TradeRecordModel.create(reusableTradeDatas[3]);
+          await PositionChangeModel.create({
+            ...reusablePositions[3],
+            symbol: 'AAPL',
+            totalLotCount: 3,
+            totalQuantity: 6,
+            totalPresentInvestedAmount: 58,
+          });
+          await publishUserHoldingChangedRedisEvent({
+            ownerId: mockUserId1,
+            holdingStats: { set: [reusablePositions[3].symbol] },
+          });
+        },
+      ]) {
+        await applyNextChanges();
+        const { value } = await subscription.next();
+        emissions.push(value);
+      }
+
+      expect(emissions).toStrictEqual([
+        {
+          data: {
+            positions: [
+              {
+                data: {
+                  symbol: 'AAPL',
+                  unrealizedDayPnl: { amount: 2, percent: 12.5 },
+                },
+              },
+              {
+                data: {
+                  symbol: 'ADBE',
+                  unrealizedDayPnl: { amount: 2, percent: 12.5 },
+                },
+              },
+            ],
+          },
+        },
+        {
+          data: {
+            positions: [
+              {
+                data: {
+                  symbol: 'ADBE',
+                  unrealizedDayPnl: { amount: 4, percent: 10.526315789474 },
+                },
+              },
+            ],
+          },
+        },
+        {
+          data: {
+            positions: [
+              {
+                data: {
+                  symbol: 'AAPL',
+                  unrealizedDayPnl: { amount: 6, percent: 10.344827586207 },
+                },
+              },
+            ],
+          },
+        },
+      ]);
+    });
+  });
+
+  it('When targeting empty past holdings, emits the initial message with zero amount and percent and then continues observing for any relevant future changes as in any regular holding', async () => {
+    await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
+    await PositionChangeModel.bulkCreate(
+      reusablePositions.slice(0, 2).map(h => ({
+        ...h,
+        totalLotCount: 0,
+        totalQuantity: 0,
+        totalPresentInvestedAmount: 0,
+      }))
+    );
+
+    await using subscription = gqlWsClientIterateDisposable({
+      query: /* GraphQL */ `
+        subscription {
+          positions {
+            data {
+              symbol
+              unrealizedDayPnl {
+                amount
+                percent
+              }
+            }
+          }
+        }
+      `,
+    });
+
+    await using mockMarketData = mockMarketDataControl.start();
+
+    const emissions = [(await subscription.next()).value];
+
+    for (const applyNextChanges of [
+      async () => {
+        await TradeRecordModel.create(reusableTradeDatas[2]);
+        await PositionChangeModel.create({
+          ...reusablePositions[2],
+          totalLotCount: 1,
+          totalQuantity: 2,
+          totalPresentInvestedAmount: 16,
+        });
+
+        await publishUserHoldingChangedRedisEvent({
+          ownerId: mockUserId1,
+          holdingStats: { set: [reusablePositions[2].symbol] },
+        });
+
+        await mockMarketData.next([{ ADBE: { regularMarketChange: 1 } }]);
+      },
+
+      async () => {
+        await TradeRecordModel.create(reusableTradeDatas[3]);
+        await PositionChangeModel.create({
+          ...reusablePositions[3],
+          totalLotCount: 2,
+          totalQuantity: 4,
+          totalPresentInvestedAmount: 36,
+        });
+
+        await publishUserHoldingChangedRedisEvent({
+          ownerId: mockUserId1,
+          holdingStats: { set: [reusablePositions[3].symbol] },
+        });
+
+        await mockMarketDataControl.whenNextMarketDataSymbolsRequested();
+        await mockMarketData.next([{ AAPL: { regularMarketChange: 2 } }]);
+      },
+    ]) {
+      await applyNextChanges();
+      const { value } = await subscription.next();
+      emissions.push(value);
+    }
+
+    expect(emissions).toStrictEqual([
+      {
+        data: {
+          positions: [
+            {
+              data: {
+                symbol: 'AAPL',
+                unrealizedDayPnl: { amount: 0, percent: 0 },
+              },
+            },
+            {
+              data: {
+                symbol: 'ADBE',
+                unrealizedDayPnl: { amount: 0, percent: 0 },
+              },
+            },
+          ],
+        },
+      },
+      {
+        data: {
+          positions: [
+            {
+              data: {
+                symbol: 'ADBE',
+                unrealizedDayPnl: { amount: 2, percent: 12.5 },
+              },
+            },
+          ],
+        },
+      },
+      {
+        data: {
+          positions: [
+            {
+              data: {
+                symbol: 'AAPL',
+                unrealizedDayPnl: { amount: 8, percent: 22.222222222222 },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
+  it('When targeting empty past holdings, changes in market data do not cause any further updates to be emitted', async () => {
+    await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
+    await PositionChangeModel.bulkCreate([
+      {
+        ...reusablePositions[0],
+        totalLotCount: 0,
+        totalQuantity: 0,
+        totalPresentInvestedAmount: 0,
+      },
+      {
+        ...reusablePositions[1],
+        totalLotCount: 1,
+        totalQuantity: 1,
+        totalPresentInvestedAmount: 4,
+      },
+    ]);
+
+    await using subscription = gqlWsClientIterateDisposable({
+      query: /* GraphQL */ `
+        subscription {
+          positions {
+            data {
+              symbol
+              unrealizedDayPnl {
+                amount
+                percent
+              }
+            }
+          }
+        }
+      `,
+    });
+
+    await using mockMarketData = mockMarketDataControl.start();
+    await mockMarketData.next([
+      {
+        ADBE: { regularMarketChange: 1 },
+        AAPL: { regularMarketChange: 1 },
+      },
+      {
+        ADBE: { regularMarketChange: 2 },
+        AAPL: { regularMarketChange: 2 },
+      },
+      {
+        ADBE: { regularMarketChange: 3 },
+        AAPL: { regularMarketChange: 3 },
+      },
+    ]);
+
+    const emissions = await pipe(subscription, itTake(3), itCollect);
+
+    expect(emissions).toStrictEqual([
+      {
+        data: {
+          positions: [
+            {
+              data: {
+                symbol: 'AAPL',
+                unrealizedDayPnl: { amount: 1, percent: 25 },
+              },
+            },
+            {
+              data: {
+                symbol: 'ADBE',
+                unrealizedDayPnl: { amount: 0, percent: 0 },
+              },
+            },
+          ],
+        },
+      },
+      {
+        data: {
+          positions: [
+            {
+              data: {
+                symbol: 'AAPL',
+                unrealizedDayPnl: { amount: 2, percent: 50 },
+              },
+            },
+          ],
+        },
+      },
+      {
+        data: {
+          positions: [
+            {
+              data: {
+                symbol: 'AAPL',
+                unrealizedDayPnl: { amount: 3, percent: 75 },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
+  it('Emits updates correctly in conjunction with changes to position symbols whose market data cannot be found', async () => {
+    await TradeRecordModel.bulkCreate([
+      { ...reusableTradeDatas[0], symbol: 'ADBE' },
+      { ...reusableTradeDatas[1], symbol: 'AAPL' },
+      { ...reusableTradeDatas[2], symbol: 'NVDA' },
+    ]);
+    await PositionChangeModel.bulkCreate([
+      { ...reusablePositions[0], symbol: 'ADBE' },
+      { ...reusablePositions[1], symbol: 'AAPL' },
+      { ...reusablePositions[2], symbol: 'NVDA' },
+    ]);
+
+    await using _ = mockMarketDataControl.start([
+      {
+        ADBE: { regularMarketChange: 1 },
+        AAPL: null,
+        NVDA: null,
+      },
+    ]);
+
+    await using subscription = gqlWsClientIterateDisposable({
+      query: /* GraphQL */ `
+        subscription {
+          positions {
+            data {
+              symbol
+              unrealizedDayPnl {
+                amount
+                percent
+              }
+            }
+          }
+        }
+      `,
+    });
+
+    const firstEmission = await pipe(subscription, itTakeFirst());
+
+    expect(firstEmission).toStrictEqual({
+      data: null,
+      errors: [
+        {
+          message: 'Couldn\'t find market data for some symbols: "AAPL", "NVDA"',
+          extensions: {
+            type: 'SYMBOL_MARKET_DATA_NOT_FOUND',
+            details: { symbolsNotFound: ['AAPL', 'NVDA'] },
+          },
+        },
+      ],
+    });
+  });
+
   it('When targeting positions using the `filters.symbols` arg, only positions with corresponding symbols have updates sent for and are watched for further changes', async () => {
     await TradeRecordModel.bulkCreate([
       { ...reusableTradeDatas[0], symbol: 'ADBE' },

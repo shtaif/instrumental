@@ -1,8 +1,8 @@
-import { isEqual, values, compact } from 'lodash-es';
+import { isEqual, values, compact, uniq } from 'lodash-es';
 import { empty } from '@reactivex/ix-esnext-esm/asynciterable';
 import { type DeepPartial } from 'utility-types';
 import { pipe } from 'shared-utils';
-import { itMap, itFilter, itLazyDefer, itShare } from 'iterable-operators';
+import { itMap, itFilter, itLazyDefer, itShare, itCombineLatest } from 'iterable-operators';
 import {
   type StatsObjectSpecifier,
   type StatsObjects,
@@ -20,6 +20,7 @@ import {
 import { portfolioStatsCalcMarketStats } from './portfolioStatsCalcMarketStats.js';
 import { calcPnlInTranslateCurrencies } from './calcPnlInTranslateCurrencies.js';
 import { calcHoldingRevenue } from './calcHoldingRevenue.js';
+import { calcPosDayUnrealizedPnl } from './calcPosDayUnrealizedPnl.js';
 import { deepObjectPickFields, type DeepObjectFieldsPicked } from './deepObjectPickFields.js';
 
 export {
@@ -82,18 +83,22 @@ function getLiveMarketData(params: {
       .flatMap(fields => values(fields))
       .some(val => val === true),
 
-    pipe(paramsNorm.fields.holdings, ({ pnl, priceData, marketValue }) => [
+    pipe(paramsNorm.fields.holdings, ({ pnl, dayPnl, priceData, marketValue }) => [
       pnl,
       pnl?.byTranslateCurrencies,
+      dayPnl,
+      dayPnl?.byTranslateCurrencies,
       priceData,
       marketValue,
     ])
       .flatMap(fields => values(fields))
       .some(val => val === true),
 
-    pipe(paramsNorm.fields.lots, ({ pnl, priceData, marketValue }) => [
+    pipe(paramsNorm.fields.lots, ({ pnl, dayPnl, priceData, marketValue }) => [
       pnl,
       pnl?.byTranslateCurrencies,
+      dayPnl,
+      dayPnl?.byTranslateCurrencies,
       priceData,
       marketValue,
     ])
@@ -123,9 +128,13 @@ function getLiveMarketData(params: {
     paramsNorm.fields.portfolios.pnl,
     paramsNorm.fields.holdings.pnl,
     paramsNorm.fields.lots.pnl,
+    // paramsNorm.fields.portfolios.dayPnl,
+    paramsNorm.fields.holdings.dayPnl,
+    paramsNorm.fields.lots.dayPnl,
   ].some(
     pnl =>
       pnl?.amount ||
+      pnl?.fraction ||
       pnl?.percent ||
       pnl?.byTranslateCurrencies?.amount ||
       pnl?.byTranslateCurrencies?.currency ||
@@ -141,18 +150,13 @@ function getLiveMarketData(params: {
         holdings: requestedSomeHoldingStatsMarketDataFields,
         lots: requestedSomeLotsMarketDataFields,
       },
-      translateToCurrencies: compact([
-        ...paramsNorm.translateToCurrencies,
-        !paramsNorm.fields.holdings.holding?.currentPortfolioPortion
-          ? undefined
-          : unifiedCurrencyForPortfolioTotalValueCalcs,
-      ]),
+      translateToCurrencies: compact(paramsNorm.translateToCurrencies),
     },
   });
 
   return pipe(
-    statsWithMarketDataIter,
-    itMap(({ changedStats, currentMarketData }) => {
+    itCombineLatest(statsWithMarketDataIter),
+    itMap(([{ changedStats, currentMarketData }]) => {
       // TODO: Need to refactor all calculations that follow to be decimal-accurate (with `pnpm add decimal.js-light`)
 
       const portfolioUpdates = (
@@ -229,10 +233,35 @@ function getLiveMarketData(params: {
               : holding.totalQuantity * priceUpdateForSymbol.regularMarketPrice;
           })();
 
+          const dayPnl = !requestedSomeUnrealizedPnlFields
+            ? undefined
+            : (() => {
+                const pnl = calcPosDayUnrealizedPnl({
+                  position: holding,
+                  priceInfo: priceUpdateForSymbol,
+                });
+
+                const pnlByTranslateCurrencies = calcPnlInTranslateCurrencies(
+                  holding.symbolInfo.currency,
+                  paramsNorm.translateToCurrencies,
+                  pnl.amount,
+                  currentMarketData
+                );
+
+                return {
+                  amount: normalizeFloatImprecisions(pnl.amount),
+                  fraction: normalizeFloatImprecisions(pnl.fraction),
+                  get percent() {
+                    return normalizeFloatImprecisions(pnl.fraction * 100);
+                  },
+                  byTranslateCurrencies: pnlByTranslateCurrencies,
+                };
+              })();
+
           const pnl = !requestedSomeUnrealizedPnlFields
             ? undefined
             : (() => {
-                const { amount: pnlAmount, percent: pnlPercent } = calcHoldingRevenue({
+                const { amount: pnlAmount, fraction: pnlFraction } = calcHoldingRevenue({
                   holding,
                   priceInfo: priceUpdateForSymbol,
                 });
@@ -246,7 +275,10 @@ function getLiveMarketData(params: {
 
                 return {
                   amount: normalizeFloatImprecisions(pnlAmount),
-                  percent: normalizeFloatImprecisions(pnlPercent),
+                  fraction: normalizeFloatImprecisions(pnlFraction),
+                  get percent() {
+                    return normalizeFloatImprecisions(pnlFraction * 100);
+                  },
                   byTranslateCurrencies: pnlByTranslateCurrencies,
                 };
               })();
@@ -256,6 +288,7 @@ function getLiveMarketData(params: {
             holding,
             priceData,
             marketValue,
+            dayPnl,
             pnl,
           };
         })
@@ -290,17 +323,46 @@ function getLiveMarketData(params: {
               : lot.remainingQuantity * priceUpdateForSymbol.regularMarketPrice;
           })();
 
+          const dayPnl = !requestedSomeUnrealizedPnlFields
+            ? undefined
+            : (() => {
+                const [pnlAmount, pnlFraction] =
+                  lot.remainingQuantity === 0
+                    ? [0, 0]
+                    : (() => {
+                        const amount =
+                          lot.remainingQuantity * priceUpdateForSymbol.regularMarketChange;
+                        const fraction = amount / lot.openingTrade.price;
+                        return [amount, fraction];
+                      })();
+
+                const pnlByTranslateCurrencies = calcPnlInTranslateCurrencies(
+                  lot.symbolInfo.currency,
+                  paramsNorm.translateToCurrencies,
+                  pnlAmount,
+                  currentMarketData
+                );
+
+                return {
+                  amount: normalizeFloatImprecisions(pnlAmount),
+                  fraction: normalizeFloatImprecisions(pnlFraction),
+                  get percent() {
+                    return normalizeFloatImprecisions(pnlFraction * 100);
+                  },
+                  byTranslateCurrencies: pnlByTranslateCurrencies,
+                };
+              })();
+
           const pnl = !requestedSomeUnrealizedPnlFields
             ? undefined
             : (() => {
-                const [pnlAmount, pnlPercent] =
+                const [pnlAmount, pnlFraction] =
                   lot.remainingQuantity === 0
                     ? [0, 0]
                     : [
                         lot.remainingQuantity *
                           (priceUpdateForSymbol.regularMarketPrice - lot.openingTrade.price),
-                        (priceUpdateForSymbol.regularMarketPrice / lot.openingTrade.price - 1) *
-                          100,
+                        priceUpdateForSymbol.regularMarketPrice / lot.openingTrade.price - 1,
                       ];
 
                 const pnlByTranslateCurrencies = calcPnlInTranslateCurrencies(
@@ -312,7 +374,10 @@ function getLiveMarketData(params: {
 
                 return {
                   amount: normalizeFloatImprecisions(pnlAmount),
-                  percent: normalizeFloatImprecisions(pnlPercent),
+                  fraction: normalizeFloatImprecisions(pnlFraction),
+                  get percent() {
+                    return normalizeFloatImprecisions(pnlFraction * 100);
+                  },
                   byTranslateCurrencies: pnlByTranslateCurrencies,
                 };
               })();
@@ -322,6 +387,7 @@ function getLiveMarketData(params: {
             lot,
             priceData,
             marketValue,
+            dayPnl,
             pnl,
           };
         })
@@ -463,8 +529,19 @@ type LotsSelectableFields = {
     regularMarketChangeRate?: boolean;
   };
   marketValue?: boolean;
+  dayPnl?: {
+    amount?: boolean;
+    fraction?: boolean;
+    percent?: boolean;
+    byTranslateCurrencies?: {
+      amount?: boolean;
+      currency?: boolean;
+      exchangeRate?: boolean;
+    };
+  };
   pnl?: {
     amount?: boolean;
+    fraction?: boolean;
     percent?: boolean;
     byTranslateCurrencies?: {
       amount?: boolean;
@@ -486,7 +563,6 @@ type HoldingsSelectableFields = {
     totalRealizedAmount?: boolean;
     totalRealizedProfitOrLossAmount?: boolean;
     totalRealizedProfitOrLossRate?: boolean;
-    currentPortfolioPortion?: boolean;
     breakEvenPrice?: boolean;
     lastChangedAt?: boolean;
   };
@@ -499,8 +575,19 @@ type HoldingsSelectableFields = {
     regularMarketChangeRate?: boolean;
   };
   marketValue?: boolean;
+  dayPnl?: {
+    amount?: boolean;
+    fraction?: boolean;
+    percent?: boolean;
+    byTranslateCurrencies?: {
+      amount?: boolean;
+      currency?: boolean;
+      exchangeRate?: boolean;
+    };
+  };
   pnl?: {
     amount?: boolean;
+    fraction?: boolean;
     percent?: boolean;
     byTranslateCurrencies?: {
       amount?: boolean;
@@ -525,6 +612,7 @@ type PortfoliosSelectableFields = {
   marketValue?: boolean;
   pnl?: {
     amount?: boolean;
+    fraction?: boolean;
     percent?: boolean;
     byTranslateCurrencies?: {
       amount?: boolean;
@@ -552,6 +640,7 @@ type HoldingMarketStatsUpdate<TTranslateCurrencies extends string = string> = {
   holding: HoldingStats;
   priceData: InstrumentMarketPriceInfo;
   marketValue: number;
+  dayPnl: PnlInfo<TTranslateCurrencies>; // TODO: Rename this prop into `unrealizedDayPnl`
   pnl: PnlInfo<TTranslateCurrencies>; // TODO: Rename this prop into `unrealizedPnl`
 };
 
@@ -560,6 +649,7 @@ type LotMarketStatsUpdate<TTranslateCurrencies extends string = string> = {
   lot: Lot;
   priceData: InstrumentMarketPriceInfo;
   marketValue: number;
+  dayPnl: PnlInfo<TTranslateCurrencies>; // TODO: Rename this prop into `unrealizedDayPnl`
   pnl: PnlInfo<TTranslateCurrencies>; // TODO: Rename this prop into `unrealizedPnl`
 };
 
@@ -574,11 +664,13 @@ type InstrumentMarketPriceInfo = Pick<
 >;
 
 type PnlInfo<TTranslateCurrencies extends string> = {
-  percent: number;
+  fraction: number;
   amount: number;
   byTranslateCurrencies: {
     currency: TTranslateCurrencies;
     exchangeRate: number;
     amount: number;
   }[];
+  /** @deprecated use the `fraction` property instead */
+  percent: number;
 };

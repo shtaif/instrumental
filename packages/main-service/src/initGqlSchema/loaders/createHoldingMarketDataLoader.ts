@@ -43,6 +43,8 @@ function createHoldingMarketDataLoader(): DataLoader<
                 marketState: true,
                 regularMarketTime: true,
                 regularMarketPrice: true,
+                regularMarketChange: true,
+                regularMarketChangeRate: true,
               },
               pnl: {
                 amount: true,

@@ -7,8 +7,9 @@ type RevenueInfo {
 
 type PnlInfo {
   amount: Float!
-  percent: Float!
+  fraction: Float!
   currencyAdjusted(currency: String!): CurrencyAdjustedPnlInfo!
+  percent: Float! @deprecated(reason: "Use `fraction` field instead")
 }
 
 type CurrencyAdjustedPnlInfo {

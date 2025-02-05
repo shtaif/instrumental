@@ -85,10 +85,13 @@ async function startMockMarketDataService(): Promise<{ close: () => Promise<void
                   symbolData === null
                     ? null
                     : {
+                        quoteSourceName: undefined,
                         currency: 'USD',
                         marketState: 'REGULAR',
                         regularMarketTime: '2024-01-01T00:00:00.000Z',
-                        quoteSourceName: undefined,
+                        regularMarketPrice: 1,
+                        regularMarketChange: 0,
+                        regularMarketChangeRate: 0,
                         ...symbolData,
                       }
                 )

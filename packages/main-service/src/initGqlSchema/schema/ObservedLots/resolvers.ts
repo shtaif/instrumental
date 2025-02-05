@@ -52,8 +52,22 @@ const resolvers = {
                   regularMarketChangeRate: !!fields?.regularMarketChangeRate,
                 })),
                 marketValue: !!requestedFields.data?.subFields?.marketValue,
+                dayPnl: pipe(
+                  requestedFields.data?.subFields.unrealizedDayPnl?.subFields,
+                  fields => ({
+                    amount: !!fields?.amount,
+                    fraction: !!fields?.fraction,
+                    percent: !!fields?.percent,
+                    byTranslateCurrencies: pipe(fields?.currencyAdjusted?.subFields, fields => ({
+                      amount: !!fields?.amount,
+                      currency: !!fields?.currency,
+                      exchangeRate: !!fields?.exchangeRate,
+                    })),
+                  })
+                ),
                 pnl: pipe(requestedFields.data?.subFields.unrealizedPnl?.subFields, fields => ({
                   amount: !!fields?.amount,
+                  fraction: !!fields?.fraction,
                   percent: !!fields?.percent,
                   byTranslateCurrencies: pipe(fields?.currencyAdjusted?.subFields, fields => ({
                     amount: !!fields?.amount,
@@ -65,15 +79,24 @@ const resolvers = {
             },
           }),
           itMap(updates =>
-            updates.lots.map(({ type, lot, priceData, marketValue, pnl }) => ({
+            updates.lots.map(({ type, lot, priceData, marketValue, dayPnl, pnl }) => ({
               type,
               data: {
                 ...lot,
                 priceData,
                 marketValue,
+                unrealizedDayPnl: !dayPnl
+                  ? undefined
+                  : {
+                      fraction: dayPnl.fraction,
+                      percent: dayPnl.percent,
+                      amount: dayPnl.amount,
+                      currencyAdjusted: dayPnl.byTranslateCurrencies?.[0],
+                    },
                 unrealizedPnl: !pnl
                   ? undefined
                   : {
+                      fraction: pnl.fraction,
                       percent: pnl.percent,
                       amount: pnl.amount,
                       currencyAdjusted: pnl.byTranslateCurrencies?.[0],
