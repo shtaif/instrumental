@@ -165,7 +165,6 @@ it('Handles empty holdings as intended...', async () => {
             totalRealizedProfitOrLossAmount
             totalRealizedProfitOrLossRate
             breakEvenPrice
-            currentPortfolioPortion
             # relatedPortfolioStats
             # unrealizedPnl
           }
@@ -190,7 +189,6 @@ it('Handles empty holdings as intended...', async () => {
           totalRealizedProfitOrLossAmount: 20,
           totalRealizedProfitOrLossRate: 0.25,
           breakEvenPrice: null,
-          currentPortfolioPortion: null,
         },
         {
           ownerId: mockUserId1,
@@ -204,7 +202,6 @@ it('Handles empty holdings as intended...', async () => {
           totalRealizedProfitOrLossAmount: 20,
           totalRealizedProfitOrLossRate: 0.25,
           breakEvenPrice: null,
-          currentPortfolioPortion: null,
         },
       ],
     },
@@ -294,7 +291,6 @@ it('Testing the testing capabilities 2', async () => {
             totalRealizedAmount
             totalRealizedProfitOrLossAmount
             totalRealizedProfitOrLossRate
-            # currentPortfolioPortion
             breakEvenPrice
             # relatedPortfolioStats
             instrument {
@@ -328,7 +324,6 @@ it('Testing the testing capabilities 2', async () => {
           totalRealizedProfitOrLossAmount: 1.1,
           totalRealizedProfitOrLossRate: 1.1,
           breakEvenPrice: 1.1,
-          // currentPortfolioPortion: undefined,
           instrument: {
             symbol: 'AAPL',
             name: 'Apple Inc',
@@ -347,7 +342,6 @@ it('Testing the testing capabilities 2', async () => {
           totalRealizedProfitOrLossAmount: 1.1,
           totalRealizedProfitOrLossRate: 1.1,
           breakEvenPrice: 1.1,
-          // currentPortfolioPortion: undefined,
           instrument: {
             symbol: 'ADBE',
             name: 'Adobe Inc',
