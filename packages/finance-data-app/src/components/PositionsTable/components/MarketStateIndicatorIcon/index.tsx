@@ -1,6 +1,6 @@
-import React, { type FC } from 'react';
+import { type FC } from 'react';
 import { Tooltip } from 'antd';
-import { BlippingIndicator } from '../../../../../common/BlippingIndicator';
+import { BlippingIndicator } from '../../../common/BlippingIndicator';
 import './style.css';
 
 export { MarketStateIndicatorIcon };

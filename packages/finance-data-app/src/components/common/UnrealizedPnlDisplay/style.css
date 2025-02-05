@@ -1,27 +1,52 @@
 .cmp-unrealized-pnl-display {
   display: inline-block;
 
-  .pnl-amount-value {
-    font-size: 1em;
+  .loading-state-container {
+    .pnl-amount-skel {
+      display: inline-flex;
+      width: 6em;
+      height: 1.4em;
+      vertical-align: text-bottom;
+    }
 
-    .profit-or-loss-indicator-arrow {
-      font-size: 0.5em;
+    .slash-divider {
+      vertical-align: text-bottom;
+    }
+
+    .pnl-percentage-skel {
+      display: inline-flex;
+      width: 4.2em;
+      height: 1.4em;
+      vertical-align: text-bottom;
     }
   }
 
   .slash-divider {
     font-size: 0.75em;
+    padding: 0 0.35em;
     color: var(--ant-color-text-description);
   }
 
-  .pnl-percentage-value {
-    font-size: 0.75em;
+  .tag-wrapper {
+    font-size: 1em;
 
-    &.has-profit {
-      color: #35cb8e;
+    .pnl-amount-value {
+      font-size: 1em;
+
+      .profit-or-loss-indicator-arrow {
+        font-size: 0.5em;
+      }
     }
-    &.has-loss {
-      color: #e62333;
+
+    .pnl-percentage-value {
+      font-size: 0.75em;
+
+      &.has-profit {
+        color: #35cb8e;
+      }
+      &.has-loss {
+        color: #e62333;
+      }
     }
   }
 }

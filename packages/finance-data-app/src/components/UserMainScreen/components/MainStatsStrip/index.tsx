@@ -73,9 +73,11 @@ function MainStatsStrip(props: {
               ) : (
                 <UnrealizedPnlDisplay
                   className="unrealized-pnl"
-                  unrealizedPnlAmount={next.value?.unrealizedPnl?.amount}
-                  unrealizedPnlFraction={next.value?.unrealizedPnl?.fraction}
-                  currency={next.value?.currencyShownIn}
+                  input={{
+                    unrealizedPnlAmount: next.value?.unrealizedPnl?.amount,
+                    unrealizedPnlFraction: next.value?.unrealizedPnl?.fraction,
+                    currency: next.value?.currencyShownIn,
+                  }}
                 />
               )
             }
