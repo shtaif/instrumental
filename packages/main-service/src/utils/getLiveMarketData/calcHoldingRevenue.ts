@@ -4,13 +4,13 @@ import { type UpdatedSymbolPrice } from '../marketDataService/index.js';
 export { calcHoldingRevenue };
 
 function calcHoldingRevenue(input: { holding: HoldingStats; priceInfo: UpdatedSymbolPrice }): {
-  percent: number;
+  fraction: number;
   amount: number;
 } {
   const { holding, priceInfo } = input;
 
   if (holding.breakEvenPrice === null || priceInfo === null) {
-    return { amount: 0, percent: 0 };
+    return { amount: 0, fraction: 0 };
   }
 
   // const breakEvenPrice = new Decimal(holding.totalPresentInvestedAmount).div(holding.totalQuantity);
@@ -26,7 +26,7 @@ function calcHoldingRevenue(input: { holding: HoldingStats; priceInfo: UpdatedSy
   //   .toNumber();
 
   const amount = (priceInfo.regularMarketPrice - holding.breakEvenPrice) * holding.totalQuantity;
-  const percent = (priceInfo.regularMarketPrice / holding.breakEvenPrice - 1) * 100;
+  const fraction = priceInfo.regularMarketPrice / holding.breakEvenPrice - 1;
 
-  return { amount, percent };
+  return { amount, fraction };
 }

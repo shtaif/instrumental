@@ -106,8 +106,11 @@ function observePricesDataMultiplexed<TSymbols extends string = string>(params: 
               itMap(marketDataUpdates => pick(marketDataUpdates, currAskedSymbols)),
               itFilter(marketDataUpdates => isNotEmpty(marketDataUpdates))
             );
-          } finally {
+
             await outgoingSymbolCtrl.sendNext({ remove: currAskedSymbols });
+          } catch (err) {
+            outgoingSymbolCtrl.sendNext({ remove: currAskedSymbols }); // TODO: For some reason not understood, if this call here was `await`ed then it would hang forever
+            throw err;
           }
         })
       );

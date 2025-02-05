@@ -42,6 +42,8 @@ function createLiveHoldingMarketDataLoader(): DataLoader<
               marketState: true,
               regularMarketTime: true,
               regularMarketPrice: true,
+              regularMarketChange: true,
+              regularMarketChangeRate: true,
             },
             marketValue: true,
             pnl: {

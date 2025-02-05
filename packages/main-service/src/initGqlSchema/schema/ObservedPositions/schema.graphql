@@ -31,5 +31,6 @@ type ObservedPosition {
   breakEvenPrice: Float
   priceData: InstrumentMarketData!
   marketValue: Float!
+  unrealizedDayPnl: PnlInfo!
   unrealizedPnl: PnlInfo!
 }

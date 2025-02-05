@@ -240,6 +240,7 @@ export type ObservedLot = {
   recordUpdatedAt: Scalars['DateTime']['output'];
   remainingQuantity: Scalars['Float']['output'];
   symbol: Scalars['ID']['output'];
+  unrealizedDayPnl: PnlInfo;
   unrealizedPnl: PnlInfo;
 };
 
@@ -293,6 +294,7 @@ export type ObservedPosition = {
   totalRealizedAmount: Scalars['Float']['output'];
   totalRealizedProfitOrLossAmount: Scalars['Float']['output'];
   totalRealizedProfitOrLossRate: Scalars['Float']['output'];
+  unrealizedDayPnl: PnlInfo;
   unrealizedPnl: PnlInfo;
 };
 
@@ -310,6 +312,8 @@ export type PnlInfo = {
   __typename?: 'PnlInfo';
   amount: Scalars['Float']['output'];
   currencyAdjusted: CurrencyAdjustedPnlInfo;
+  fraction: Scalars['Float']['output'];
+  /** @deprecated Use `fraction` field instead */
   percent: Scalars['Float']['output'];
 };
 
@@ -804,6 +808,7 @@ export type ObservedLotResolvers<ContextType = AppGqlContextValue, ParentType ex
   recordUpdatedAt?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   remainingQuantity?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   symbol?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  unrealizedDayPnl?: Resolver<ResolversTypes['PnlInfo'], ParentType, ContextType>;
   unrealizedPnl?: Resolver<ResolversTypes['PnlInfo'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -849,6 +854,7 @@ export type ObservedPositionResolvers<ContextType = AppGqlContextValue, ParentTy
   totalRealizedAmount?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   totalRealizedProfitOrLossAmount?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   totalRealizedProfitOrLossRate?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  unrealizedDayPnl?: Resolver<ResolversTypes['PnlInfo'], ParentType, ContextType>;
   unrealizedPnl?: Resolver<ResolversTypes['PnlInfo'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -862,6 +868,7 @@ export type ObservedPositionsUpdateResolvers<ContextType = AppGqlContextValue, P
 export type PnlInfoResolvers<ContextType = AppGqlContextValue, ParentType extends ResolversParentTypes['PnlInfo'] = ResolversParentTypes['PnlInfo']> = {
   amount?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   currencyAdjusted?: Resolver<ResolversTypes['CurrencyAdjustedPnlInfo'], ParentType, ContextType, RequireFields<PnlInfoCurrencyAdjustedArgs, 'currency'>>;
+  fraction?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   percent?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };

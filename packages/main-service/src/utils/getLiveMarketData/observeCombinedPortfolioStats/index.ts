@@ -161,27 +161,24 @@ function observeCombinedPortfolioStats(params: {
                 !askedForFieldsRequiringSymbolMarketData
                   ? [undefined, undefined]
                   : (() => {
-                      const pnl = pipe(
+                      const pnlAmount = pipe(
                         calcHoldingRevenue({
                           holding: h,
                           priceInfo: currentMarketData[h.symbol],
                         }),
-                        $ => ({
-                          amount: normalizeFloatImprecisions($.amount),
-                          percent: normalizeFloatImprecisions($.percent),
-                        })
+                        $ => normalizeFloatImprecisions($.amount)
                       );
 
                       return [
                         pipe(
-                          (pnl.amount *
+                          (pnlAmount *
                             exchangeRatesIntoCombinationCurrency[h.symbolInfo.currency!]) /
                             portfolioUnrealizedPnlAmount!,
                           normalizeFloatImprecisions,
                           ifNanThenZero
                         ),
                         pipe(
-                          ((h.totalPresentInvestedAmount + pnl.amount) *
+                          ((h.totalPresentInvestedAmount + pnlAmount) *
                             exchangeRatesIntoCombinationCurrency[h.symbolInfo.currency!]) /
                             portfolioMarketValue!,
                           ifNanThenZero,
