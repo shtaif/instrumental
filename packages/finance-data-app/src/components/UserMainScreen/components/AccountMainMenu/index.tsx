@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dropdown, Button } from 'antd';
 import { LogoutOutlined, UserOutlined } from '@ant-design/icons';

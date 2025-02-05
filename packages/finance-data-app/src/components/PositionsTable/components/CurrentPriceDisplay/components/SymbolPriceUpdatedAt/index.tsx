@@ -1,4 +1,4 @@
-import React, { memo, type ReactElement } from 'react';
+import { memo, type ReactElement } from 'react';
 import { Typography, Tooltip } from 'antd';
 import ReactTimeAgo from 'react-timeago';
 import './style.css';
