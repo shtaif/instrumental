@@ -45,8 +45,19 @@ function createObservedStatsObjectsLoader(): DataLoader<
             regularMarketChangeRate: true,
           },
           marketValue: true,
+          dayPnl: {
+            amount: true,
+            fraction: true,
+            percent: true,
+            byTranslateCurrencies: {
+              amount: true,
+              currency: true,
+              exchangeRate: true,
+            },
+          },
           pnl: {
             amount: true,
+            fraction: true,
             percent: true,
             byTranslateCurrencies: {
               amount: true,
