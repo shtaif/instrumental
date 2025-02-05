@@ -1,8 +1,7 @@
-import React, { memo, type ReactElement } from 'react';
-import { commonDecimalNumCurrencyFormat } from '../../utils/commonDecimalNumCurrencyFormat';
+import { memo, type ReactElement } from 'react';
 import { LivePriceDisplay } from '../../../LivePriceDisplay';
+import { commonDecimalNumCurrencyFormat } from '../../utils/commonDecimalNumCurrencyFormat';
 import { SymbolPriceUpdatedAt } from './components/SymbolPriceUpdatedAt';
-import { MarketStateIndicatorIcon } from './components/MarketStateIndicatorIcon';
 import './style.css';
 
 export { CurrentPriceDisplay };
@@ -11,7 +10,6 @@ const CurrentPriceDisplay = memo(
   (props: {
     marketPrice?: number;
     currency?: string;
-    marketState?: 'REGULAR' | 'CLOSED' | 'PRE' | 'PREPRE' | 'POST' | 'POSTPOST';
     timeOfPrice?: number | string | Date;
   }): ReactElement => {
     return (
@@ -20,23 +18,14 @@ const CurrentPriceDisplay = memo(
           <> - </>
         ) : (
           <div className="price-display">
-            {props.marketState && (
-              <div>
-                <MarketStateIndicatorIcon marketState={props.marketState} />
-              </div>
-            )}
             <div>
-              <div>
-                <LivePriceDisplay className="" price={props.marketPrice}>
-                  {marketPrice => (
-                    <>{commonDecimalNumCurrencyFormat(marketPrice, props.currency)}</>
-                  )}
-                </LivePriceDisplay>
-              </div>
-              {props.timeOfPrice && (
-                <SymbolPriceUpdatedAt className="last-updated-at" at={props.timeOfPrice} />
-              )}
+              <LivePriceDisplay className="" price={props.marketPrice}>
+                {marketPrice => <>{commonDecimalNumCurrencyFormat(marketPrice, props.currency)}</>}
+              </LivePriceDisplay>
             </div>
+            {props.timeOfPrice && (
+              <SymbolPriceUpdatedAt className="last-updated-at" at={props.timeOfPrice} />
+            )}
           </div>
         )}
       </div>

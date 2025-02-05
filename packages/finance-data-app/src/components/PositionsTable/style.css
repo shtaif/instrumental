@@ -1,17 +1,23 @@
 .cmp-positions-table {
   .symbol-cell {
     width: 150px;
+
+    .symbol-cell-content {
+      display: flex;
+      align-items: center;
+
+      .market-state-indicator {
+        margin-right: 14px;
+      }
+    }
   }
 
   .col-header {
     white-space: nowrap;
   }
 
-  .current-price-cell {
-    width: 21%;
-  }
-
-  .unrealized-pnl-cell {
+  .daily-unrealized-pnl-cell,
+  .total-unrealized-pnl-cell {
     .unrealized-pnl-display {
       font-size: 0.9rem;
     }

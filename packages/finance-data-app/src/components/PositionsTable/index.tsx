@@ -4,11 +4,15 @@ import { Table, Skeleton, Typography } from 'antd';
 import { of } from 'ix/Ix.asynciterable';
 import { pipe } from 'shared-utils';
 import { It, iterateFormatted, type MaybeAsyncIterable } from 'react-async-iterators';
-import { asyncIterChannelize } from '../../../../../../react-async-iterators/src/asyncIterChannelize/index.ts';
+import {
+  asyncIterChannelize,
+  type AsyncIterableChannelSubject,
+} from '../../../../../../react-async-iterators/src/asyncIterChannelize/index.ts';
 import { commonDecimalNumCurrencyFormat } from './utils/commonDecimalNumCurrencyFormat.tsx';
 import { SymbolNameTag } from './components/SymbolNameTag/index.tsx';
 import { PositionSizeDisplay } from './components/PositionSizeDisplay/index.tsx';
 import { CurrentPriceDisplay } from './components/CurrentPriceDisplay/index.tsx';
+import { MarketStateIndicatorIcon } from './components/MarketStateIndicatorIcon/index.tsx';
 import { UnrealizedPnlDisplay } from '../common/UnrealizedPnlDisplay/index.tsx';
 import {
   PositionExpandedLots,
@@ -47,7 +51,7 @@ function PositionsTable(props: {
   return (
     <It value={splitPositionsIter}>
       {({ pendingFirst: pendingFirstPositions, value: nextPositions = [] }) => {
-        const dataSource =
+        const dataSource: PositionTableRecord[] =
           loading || (pendingFirstPositions && !nextPositions?.length)
             ? range(loadingStatePlaceholderRowsCount).map((_, idx) => ({
                 isLoading: true as const,
@@ -59,10 +63,11 @@ function PositionsTable(props: {
               }));
 
         return (
-          <Table<(typeof dataSource)[number]>
+          <Table
             className={`cmp-positions-table ${className}`}
             style={style}
             size="small"
+            scroll={{ x: 'max-content' }}
             pagination={false}
             rowKey={item => (item.isLoading ? `${item.idx}` : item.values.value.current.symbol)}
             dataSource={dataSource}
@@ -97,19 +102,32 @@ function PositionsTable(props: {
                 )),
             }}
           >
-            <Column<(typeof dataSource)[number]>
+            <Column<PositionTableRecord>
               title={<span className="col-header">Symbol</span>}
               className="symbol-cell"
+              fixed="left"
               render={(_, item) =>
                 item.isLoading ? (
                   <CellSkeleton />
                 ) : (
-                  <SymbolNameTag symbol={item.values.value.current.symbol} />
+                  <div className="symbol-cell-content">
+                    <It value={item.values}>
+                      {({ value: p }) =>
+                        p.marketState && (
+                          <MarketStateIndicatorIcon
+                            className="market-state-indicator"
+                            marketState={p.marketState}
+                          />
+                        )
+                      }
+                    </It>
+                    <SymbolNameTag symbol={item.values.value.current.symbol} />
+                  </div>
                 )
               }
             />
 
-            <Column<(typeof dataSource)[number]>
+            <Column<PositionTableRecord>
               title={<span className="col-header">Current Price</span>}
               className="current-price-cell"
               render={(_, item) =>
@@ -121,7 +139,6 @@ function PositionsTable(props: {
                       <CurrentPriceDisplay
                         marketPrice={p.marketPrice}
                         currency={p.currency}
-                        marketState={p.marketState}
                         timeOfPrice={p.timeOfPrice}
                       />
                     ))}
@@ -130,7 +147,7 @@ function PositionsTable(props: {
               }
             />
 
-            <Column<(typeof dataSource)[number]>
+            <Column<PositionTableRecord>
               title={<span className="col-header">Break-even Price</span>}
               className="break-even-price-cell"
               render={(_, item) =>
@@ -150,7 +167,7 @@ function PositionsTable(props: {
               }
             />
 
-            <Column<(typeof dataSource)[number]>
+            <Column<PositionTableRecord>
               title={<span className="col-header">Position</span>}
               className="quantity-cell"
               render={(_, item) =>
@@ -170,30 +187,47 @@ function PositionsTable(props: {
               }
             />
 
-            <Column<(typeof dataSource)[number]>
-              title={<span className="col-header">Unrealized P&L</span>}
-              className="unrealized-pnl-cell"
-              render={(_, item) =>
-                item.isLoading ? (
-                  <CellSkeleton />
-                ) : (
-                  <It value={item.values}>
-                    {({ value: p }) => (
-                      <UnrealizedPnlDisplay
-                        className="unrealized-pnl-display"
-                        unrealizedPnlAmount={p.unrealizedPnl?.amount}
-                        unrealizedPnlFraction={
-                          !p.unrealizedPnl?.percent ? undefined : p.unrealizedPnl.percent / 100
-                        }
-                        currency={p.currency}
-                      />
-                    )}
-                  </It>
-                )
-              }
+            <Column<PositionTableRecord>
+              title={<span className="col-header">Daily Unrealized P&L</span>}
+              className="daily-unrealized-pnl-cell"
+              render={(_, item) => (
+                <UnrealizedPnlDisplay
+                  className="unrealized-pnl-display"
+                  loading={item.isLoading}
+                  input={
+                    item.isLoading
+                      ? undefined
+                      : iterateFormatted(item.values, p => ({
+                          unrealizedPnlAmount: p.unrealizedDayPnl?.amount,
+                          unrealizedPnlFraction: p.unrealizedDayPnl?.fraction,
+                          currency: p.currency,
+                        }))
+                  }
+                />
+              )}
             />
 
-            <Column<(typeof dataSource)[number]>
+            <Column<PositionTableRecord>
+              title={<span className="col-header">Unrealized P&L</span>}
+              className="total-unrealized-pnl-cell"
+              render={(_, item) => (
+                <UnrealizedPnlDisplay
+                  className="unrealized-pnl-display"
+                  loading={item.isLoading}
+                  input={
+                    item.isLoading
+                      ? undefined
+                      : iterateFormatted(item.values, p => ({
+                          unrealizedPnlAmount: p.unrealizedPnl?.amount,
+                          unrealizedPnlFraction: p.unrealizedPnl?.fraction,
+                          currency: p.currency,
+                        }))
+                  }
+                />
+              )}
+            />
+
+            <Column<PositionTableRecord>
               title={<span className="col-header">Portfolio portion</span>}
               className="portfolio-portion-cell"
               render={(_, item) =>
@@ -237,9 +271,13 @@ type PositionRecord = {
   marketState?: 'REGULAR' | 'CLOSED' | 'PRE' | 'PREPRE' | 'POST' | 'POSTPOST';
   marketPrice?: number;
   timeOfPrice?: Date | string | number;
+  unrealizedDayPnl?: {
+    amount?: number;
+    fraction?: number;
+  };
   unrealizedPnl?: {
     amount?: number;
-    percent?: number;
+    fraction?: number;
   };
   rawPositions?: {
     date: string;
@@ -247,11 +285,15 @@ type PositionRecord = {
     price: number;
     unrealizedPnl?: {
       amount?: number;
-      percent?: number;
+      fraction?: number;
     };
   }[];
   comprisingLots?: PositionExpandedLotsProps['lots'];
 };
+
+type PositionTableRecord =
+  | { isLoading: true; idx: number }
+  | { isLoading: false; values: AsyncIterableChannelSubject<PositionRecord, PositionRecord> };
 
 const CellSkeleton = memo(() => {
   return <Skeleton active title={false} paragraph={{ rows: 1 }} />;
