@@ -13,7 +13,6 @@ type HoldingStats {
   totalRealizedAmount: Float!
   totalRealizedProfitOrLossAmount: Float!
   totalRealizedProfitOrLossRate: Float!
-  currentPortfolioPortion: Float
   breakEvenPrice: Float
   instrument: InstrumentInfo!
   relatedPortfolioStats: PortfolioStats!

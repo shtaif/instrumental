@@ -498,8 +498,6 @@ function getLiveMarketData(params: {
   );
 }
 
-const unifiedCurrencyForPortfolioTotalValueCalcs = 'USD';
-
 type SelectableFields = {
   lots?: LotsSelectableFields;
   holdings?: HoldingsSelectableFields;
@@ -637,7 +635,7 @@ type PortfolioMarketStatsUpdate<TTranslateCurrencies extends string = string> = 
 
 type HoldingMarketStatsUpdate<TTranslateCurrencies extends string = string> = {
   type: 'SET' | 'REMOVE';
-  holding: HoldingStats;
+  holding: Omit<HoldingStats, 'currentPortfolioPortion'>;
   priceData: InstrumentMarketPriceInfo;
   marketValue: number;
   dayPnl: PnlInfo<TTranslateCurrencies>; // TODO: Rename this prop into `unrealizedDayPnl`

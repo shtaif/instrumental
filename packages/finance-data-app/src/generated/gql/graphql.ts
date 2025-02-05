@@ -85,7 +85,6 @@ export type ExchangeInfo = {
 export type HoldingStats = {
   __typename?: 'HoldingStats';
   breakEvenPrice?: Maybe<Scalars['Float']['output']>;
-  currentPortfolioPortion?: Maybe<Scalars['Float']['output']>;
   instrument: InstrumentInfo;
   lastChangedAt: Scalars['DateTime']['output'];
   lastRelatedTradeId: Scalars['ID']['output'];
@@ -282,7 +281,6 @@ export enum ObservedPortfolioStatsUpdateType {
 export type ObservedPosition = {
   __typename?: 'ObservedPosition';
   breakEvenPrice?: Maybe<Scalars['Float']['output']>;
-  currentPortfolioPortion?: Maybe<Scalars['Float']['output']>;
   lastChangedAt: Scalars['DateTime']['output'];
   lastRelatedTradeId: Scalars['ID']['output'];
   marketValue: Scalars['Float']['output'];
