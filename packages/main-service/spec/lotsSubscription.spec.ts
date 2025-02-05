@@ -586,7 +586,7 @@ describe('Subscription.lots ', () => {
     ]);
   });
 
-  describe('With `marketValue` and `unrealizedPnl` fields', () => {
+  describe('With `marketValue`, `unrealizedDayPnl` and `unrealizedPnl` fields', () => {
     it('Emits updates correctly in conjunction with changes to lot symbols market data', async () => {
       await TradeRecordModel.bulkCreate([
         {
@@ -671,9 +671,12 @@ describe('Subscription.lots ', () => {
       ]);
 
       await using __ = mockMarketDataControl.start([
-        { ADBE: { regularMarketPrice: 3 }, AAPL: { regularMarketPrice: 3 } },
-        { ADBE: { regularMarketPrice: 4 } },
-        { AAPL: { regularMarketPrice: 4 } },
+        {
+          ADBE: { regularMarketPrice: 3, regularMarketChange: 1 },
+          AAPL: { regularMarketPrice: 3, regularMarketChange: 1 },
+        },
+        { ADBE: { regularMarketPrice: 4, regularMarketChange: 2 } },
+        { AAPL: { regularMarketPrice: 4, regularMarketChange: 2 } },
       ]);
 
       const emissions = await asyncPipe(
@@ -693,6 +696,10 @@ describe('Subscription.lots ', () => {
                 data {
                   id
                   marketValue
+                  unrealizedDayPnl {
+                    amount
+                    percent
+                  }
                   unrealizedPnl {
                     amount
                     percent
@@ -713,6 +720,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[3].id,
                   marketValue: 15,
+                  unrealizedDayPnl: { amount: 5, percent: 250 },
                   unrealizedPnl: { amount: 5, percent: 50 },
                 },
               },
@@ -720,6 +728,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[2].id,
                   marketValue: 30,
+                  unrealizedDayPnl: { amount: 10, percent: 500 },
                   unrealizedPnl: { amount: 10, percent: 50 },
                 },
               },
@@ -727,6 +736,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[1].id,
                   marketValue: 15,
+                  unrealizedDayPnl: { amount: 5, percent: 250 },
                   unrealizedPnl: { amount: 5, percent: 50 },
                 },
               },
@@ -734,6 +744,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[0].id,
                   marketValue: 30,
+                  unrealizedDayPnl: { amount: 10, percent: 500 },
                   unrealizedPnl: { amount: 10, percent: 50 },
                 },
               },
@@ -747,6 +758,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[1].id,
                   marketValue: 20,
+                  unrealizedDayPnl: { amount: 10, percent: 500 },
                   unrealizedPnl: { amount: 10, percent: 100 },
                 },
               },
@@ -754,6 +766,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[0].id,
                   marketValue: 40,
+                  unrealizedDayPnl: { amount: 20, percent: 1000 },
                   unrealizedPnl: { amount: 20, percent: 100 },
                 },
               },
@@ -767,6 +780,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[3].id,
                   marketValue: 20,
+                  unrealizedDayPnl: { amount: 10, percent: 500 },
                   unrealizedPnl: { amount: 10, percent: 100 },
                 },
               },
@@ -774,6 +788,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[2].id,
                   marketValue: 40,
+                  unrealizedDayPnl: { amount: 20, percent: 1000 },
                   unrealizedPnl: { amount: 20, percent: 100 },
                 },
               },
@@ -830,8 +845,8 @@ describe('Subscription.lots ', () => {
 
       await using __ = mockMarketDataControl.start([
         {
-          ADBE: { regularMarketPrice: 2.5 },
-          AAPL: { regularMarketPrice: 2.5 },
+          ADBE: { regularMarketPrice: 2.5, regularMarketChange: 2.5 },
+          AAPL: { regularMarketPrice: 2.5, regularMarketChange: 2.5 },
         },
       ]);
 
@@ -849,6 +864,10 @@ describe('Subscription.lots ', () => {
               data {
                 id
                 marketValue
+                unrealizedDayPnl {
+                  amount
+                  percent
+                }
                 unrealizedPnl {
                   amount
                   percent
@@ -927,6 +946,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[1].id,
                   marketValue: 12.5,
+                  unrealizedDayPnl: { amount: 12.5, percent: 625 },
                   unrealizedPnl: { amount: 2.5, percent: 25 },
                 },
               },
@@ -934,6 +954,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[0].id,
                   marketValue: 25,
+                  unrealizedDayPnl: { amount: 25, percent: 1250 },
                   unrealizedPnl: { amount: 5, percent: 25 },
                 },
               },
@@ -947,6 +968,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[0].id,
                   marketValue: 20,
+                  unrealizedDayPnl: { amount: 20, percent: 1000 },
                   unrealizedPnl: { amount: 4, percent: 25 },
                 },
               },
@@ -960,6 +982,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[1].id,
                   marketValue: 7.5,
+                  unrealizedDayPnl: { amount: 7.5, percent: 375 },
                   unrealizedPnl: { amount: 1.5, percent: 25 },
                 },
               },
@@ -1024,16 +1047,16 @@ describe('Subscription.lots ', () => {
 
       await using __ = mockMarketDataControl.start([
         {
-          ADBE: { regularMarketPrice: 3 },
-          AAPL: { regularMarketPrice: 3 },
+          ADBE: { regularMarketPrice: 3, regularMarketChange: 1 },
+          AAPL: { regularMarketPrice: 3, regularMarketChange: 1 },
         },
         {
-          ADBE: { regularMarketPrice: 4 },
-          AAPL: { regularMarketPrice: 4 },
+          ADBE: { regularMarketPrice: 4, regularMarketChange: 2 },
+          AAPL: { regularMarketPrice: 4, regularMarketChange: 2 },
         },
         {
-          ADBE: { regularMarketPrice: 5 },
-          AAPL: { regularMarketPrice: 5 },
+          ADBE: { regularMarketPrice: 5, regularMarketChange: 3 },
+          AAPL: { regularMarketPrice: 5, regularMarketChange: 3 },
         },
       ]);
 
@@ -1051,6 +1074,10 @@ describe('Subscription.lots ', () => {
               data {
                 id
                 marketValue
+                unrealizedDayPnl {
+                  amount
+                  percent
+                }
                 unrealizedPnl {
                   amount
                   percent
@@ -1070,6 +1097,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[1].id,
                   marketValue: 0,
+                  unrealizedDayPnl: { amount: 0, percent: 0 },
                   unrealizedPnl: { amount: 0, percent: 0 },
                 },
               },
@@ -1077,6 +1105,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[0].id,
                   marketValue: 30,
+                  unrealizedDayPnl: { amount: 10, percent: 500 },
                   unrealizedPnl: { amount: 10, percent: 50 },
                 },
               },
@@ -1090,6 +1119,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[0].id,
                   marketValue: 40,
+                  unrealizedDayPnl: { amount: 20, percent: 1000 },
                   unrealizedPnl: { amount: 20, percent: 100 },
                 },
               },
@@ -1103,6 +1133,7 @@ describe('Subscription.lots ', () => {
                 data: {
                   id: lots[0].id,
                   marketValue: 50,
+                  unrealizedDayPnl: { amount: 30, percent: 1500 },
                   unrealizedPnl: { amount: 30, percent: 150 },
                 },
               },
@@ -1178,7 +1209,7 @@ describe('Subscription.lots ', () => {
 
       await using _ = mockMarketDataControl.start([
         {
-          ADBE: { regularMarketPrice: 10 },
+          ADBE: { regularMarketPrice: 10, regularMarketChange: 1 },
           AAPL: null,
           NVDA: null,
         },
@@ -1199,6 +1230,10 @@ describe('Subscription.lots ', () => {
               data {
                 id
                 marketValue
+                unrealizedDayPnl {
+                  amount
+                  percent
+                }
                 unrealizedPnl {
                   amount
                   percent
@@ -1225,7 +1260,7 @@ describe('Subscription.lots ', () => {
     });
   });
 
-  describe('With `unrealized.currencyAdjusted` field', () => {
+  describe('With `unrealizedPnl.currencyAdjusted` field', () => {
     it('Emits updates correctly in conjunction with changes to lot symbols currency-adjusted market data', async () => {
       await TradeRecordModel.bulkCreate([
         { ...reusableTradeDatas[0], symbol: 'ADBE', price: 1.1, quantity: 2 },
@@ -1238,17 +1273,17 @@ describe('Subscription.lots ', () => {
 
       await using __ = mockMarketDataControl.start([
         {
-          ['ADBE']: { regularMarketPrice: 1.5 },
-          ['AAPL']: { regularMarketPrice: 1.5 },
-          ['USDEUR=X']: { regularMarketPrice: 2 },
+          ['ADBE']: { regularMarketPrice: 1.5, regularMarketChange: 1 },
+          ['AAPL']: { regularMarketPrice: 1.5, regularMarketChange: 1 },
+          ['USDEUR=X']: { regularMarketPrice: 2, regularMarketChange: 2 },
         },
         {
-          ['ADBE']: { regularMarketPrice: 1.6 },
-          ['USDEUR=X']: { regularMarketPrice: 2 },
+          ['ADBE']: { regularMarketPrice: 1.6, regularMarketChange: 3 },
+          ['USDEUR=X']: { regularMarketPrice: 2, regularMarketChange: 4 },
         },
         {
-          ['AAPL']: { regularMarketPrice: 1.6 },
-          ['USDEUR=X']: { regularMarketPrice: 2 },
+          ['AAPL']: { regularMarketPrice: 1.6, regularMarketChange: 5 },
+          ['USDEUR=X']: { regularMarketPrice: 2, regularMarketChange: 6 },
         },
       ]);
 
@@ -1265,6 +1300,15 @@ describe('Subscription.lots ', () => {
             ) {
               data {
                 id
+                unrealizedDayPnl {
+                  amount
+                  percent
+                  currencyAdjusted (currency: "EUR") {
+                    currency
+                    exchangeRate
+                    amount
+                  }
+                }
                 unrealizedPnl {
                   amount
                   percent
@@ -1288,6 +1332,15 @@ describe('Subscription.lots ', () => {
               {
                 data: {
                   id: lots[1].id,
+                  unrealizedDayPnl: {
+                    amount: 2,
+                    currencyAdjusted: {
+                      amount: 4,
+                      currency: 'EUR',
+                      exchangeRate: 2,
+                    },
+                    percent: 166.666666666667,
+                  },
                   unrealizedPnl: {
                     amount: 0.6,
                     percent: 25,
@@ -1302,6 +1355,15 @@ describe('Subscription.lots ', () => {
               {
                 data: {
                   id: lots[0].id,
+                  unrealizedDayPnl: {
+                    amount: 2,
+                    currencyAdjusted: {
+                      amount: 4,
+                      currency: 'EUR',
+                      exchangeRate: 2,
+                    },
+                    percent: 181.818181818182,
+                  },
                   unrealizedPnl: {
                     amount: 0.8,
                     percent: 36.363636363636,
@@ -1322,6 +1384,15 @@ describe('Subscription.lots ', () => {
               {
                 data: {
                   id: lots[0].id,
+                  unrealizedDayPnl: {
+                    amount: 6,
+                    currencyAdjusted: {
+                      amount: 12,
+                      currency: 'EUR',
+                      exchangeRate: 2,
+                    },
+                    percent: 545.454545454545,
+                  },
                   unrealizedPnl: {
                     amount: 1,
                     percent: 45.454545454545,
@@ -1342,6 +1413,15 @@ describe('Subscription.lots ', () => {
               {
                 data: {
                   id: lots[1].id,
+                  unrealizedDayPnl: {
+                    amount: 10,
+                    currencyAdjusted: {
+                      amount: 20,
+                      currency: 'EUR',
+                      exchangeRate: 2,
+                    },
+                    percent: 833.333333333333,
+                  },
                   unrealizedPnl: {
                     amount: 0.8,
                     percent: 33.333333333333,

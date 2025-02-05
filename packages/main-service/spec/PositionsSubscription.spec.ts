@@ -780,7 +780,7 @@ describe('Subscription.positions', () => {
     ]);
   });
 
-  describe('With `marketValue` and `unrealizedPnl` fields', () => {
+  describe('With `marketValue`, `unrealizedPnl` and `unrealizedPnl` fields', () => {
     it('Emits updates correctly in conjunction with changes to position symbols market data', async () => {
       await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
       await PositionChangeModel.bulkCreate(
@@ -800,6 +800,10 @@ describe('Subscription.positions', () => {
                 data {
                   symbol
                   marketValue
+                  unrealizedDayPnl {
+                    amount
+                    percent
+                  }
                   unrealizedPnl {
                     amount
                     percent
@@ -816,14 +820,14 @@ describe('Subscription.positions', () => {
       await using mockMarketData = mockMarketDataControl.start();
       await mockMarketData.next([
         {
-          ADBE: { regularMarketPrice: 12.5 },
-          AAPL: { regularMarketPrice: 12.5 },
+          ADBE: { regularMarketPrice: 12.5, regularMarketChange: 1 },
+          AAPL: { regularMarketPrice: 12.5, regularMarketChange: 1 },
         },
         {
-          ADBE: { regularMarketPrice: 15 },
+          ADBE: { regularMarketPrice: 15, regularMarketChange: 2 },
         },
         {
-          AAPL: { regularMarketPrice: 15 },
+          AAPL: { regularMarketPrice: 15, regularMarketChange: 2 },
         },
       ]);
 
@@ -838,6 +842,7 @@ describe('Subscription.positions', () => {
                   symbol: 'AAPL',
                   marketValue: 37.5,
                   unrealizedPnl: { amount: 7.5, percent: 25 },
+                  unrealizedDayPnl: { amount: 3, percent: 10 },
                 },
               },
               {
@@ -845,6 +850,7 @@ describe('Subscription.positions', () => {
                   symbol: 'ADBE',
                   marketValue: 37.5,
                   unrealizedPnl: { amount: 7.5, percent: 25 },
+                  unrealizedDayPnl: { amount: 3, percent: 10 },
                 },
               },
             ],
@@ -858,6 +864,7 @@ describe('Subscription.positions', () => {
                   symbol: 'ADBE',
                   marketValue: 45,
                   unrealizedPnl: { amount: 15, percent: 50 },
+                  unrealizedDayPnl: { amount: 6, percent: 20 },
                 },
               },
             ],
@@ -871,6 +878,7 @@ describe('Subscription.positions', () => {
                   symbol: 'AAPL',
                   marketValue: 45,
                   unrealizedPnl: { amount: 15, percent: 50 },
+                  unrealizedDayPnl: { amount: 6, percent: 20 },
                 },
               },
             ],
@@ -897,6 +905,10 @@ describe('Subscription.positions', () => {
               data {
                 symbol
                 marketValue
+                unrealizedDayPnl {
+                  amount
+                  percent
+                }
                 unrealizedPnl {
                   amount
                   percent
@@ -910,8 +922,8 @@ describe('Subscription.positions', () => {
       await using mockMarketData = mockMarketDataControl.start();
       await mockMarketData.next([
         {
-          ADBE: { regularMarketPrice: 10 },
-          AAPL: { regularMarketPrice: 10 },
+          ADBE: { regularMarketPrice: 10, regularMarketChange: 1 },
+          AAPL: { regularMarketPrice: 10, regularMarketChange: 1 },
         },
       ]);
 
@@ -960,6 +972,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'AAPL',
                   marketValue: 20,
+                  unrealizedDayPnl: { amount: 2, percent: 12.5 },
                   unrealizedPnl: { amount: 4, percent: 25 },
                 },
               },
@@ -967,6 +980,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'ADBE',
                   marketValue: 20,
+                  unrealizedDayPnl: { amount: 2, percent: 12.5 },
                   unrealizedPnl: { amount: 4, percent: 25 },
                 },
               },
@@ -980,6 +994,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'ADBE',
                   marketValue: 40,
+                  unrealizedDayPnl: { amount: 4, percent: 10.526315789474 },
                   unrealizedPnl: { amount: 2, percent: 5.263157894737 },
                 },
               },
@@ -993,6 +1008,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'AAPL',
                   marketValue: 60,
+                  unrealizedDayPnl: { amount: 6, percent: 10.344827586207 },
                   unrealizedPnl: { amount: 2, percent: 3.448275862069 },
                 },
               },
@@ -1020,6 +1036,10 @@ describe('Subscription.positions', () => {
               data {
                 symbol
                 marketValue
+                unrealizedDayPnl {
+                  amount
+                  percent
+                }
                 unrealizedPnl {
                   amount
                   percent
@@ -1049,7 +1069,7 @@ describe('Subscription.positions', () => {
             holdingStats: { set: [reusablePositions[2].symbol] },
           });
 
-          await mockMarketData.next([{ ADBE: { regularMarketPrice: 11 } }]);
+          await mockMarketData.next([{ ADBE: { regularMarketPrice: 11, regularMarketChange: 1 } }]);
         },
 
         async () => {
@@ -1067,7 +1087,7 @@ describe('Subscription.positions', () => {
           });
 
           await mockMarketDataControl.whenNextMarketDataSymbolsRequested();
-          await mockMarketData.next([{ AAPL: { regularMarketPrice: 12 } }]);
+          await mockMarketData.next([{ AAPL: { regularMarketPrice: 12, regularMarketChange: 2 } }]);
         },
       ]) {
         await applyNextChanges();
@@ -1083,6 +1103,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'AAPL',
                   marketValue: 0,
+                  unrealizedDayPnl: { amount: 0, percent: 0 },
                   unrealizedPnl: { amount: 0, percent: 0 },
                 },
               },
@@ -1090,6 +1111,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'ADBE',
                   marketValue: 0,
+                  unrealizedDayPnl: { amount: 0, percent: 0 },
                   unrealizedPnl: { amount: 0, percent: 0 },
                 },
               },
@@ -1103,6 +1125,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'ADBE',
                   marketValue: 22,
+                  unrealizedDayPnl: { amount: 2, percent: 12.5 },
                   unrealizedPnl: { amount: 6, percent: 37.5 },
                 },
               },
@@ -1116,6 +1139,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'AAPL',
                   marketValue: 48,
+                  unrealizedDayPnl: { amount: 8, percent: 22.222222222222 },
                   unrealizedPnl: { amount: 12, percent: 33.333333333333 },
                 },
               },
@@ -1149,6 +1173,10 @@ describe('Subscription.positions', () => {
               data {
                 symbol
                 marketValue
+                unrealizedDayPnl {
+                  amount
+                  percent
+                }
                 unrealizedPnl {
                   amount
                   percent
@@ -1162,16 +1190,16 @@ describe('Subscription.positions', () => {
       await using mockMarketData = mockMarketDataControl.start();
       await mockMarketData.next([
         {
-          ADBE: { regularMarketPrice: 5 },
-          AAPL: { regularMarketPrice: 5 },
+          ADBE: { regularMarketPrice: 5, regularMarketChange: 1 },
+          AAPL: { regularMarketPrice: 5, regularMarketChange: 1 },
         },
         {
-          ADBE: { regularMarketPrice: 6 },
-          AAPL: { regularMarketPrice: 6 },
+          ADBE: { regularMarketPrice: 6, regularMarketChange: 2 },
+          AAPL: { regularMarketPrice: 6, regularMarketChange: 2 },
         },
         {
-          ADBE: { regularMarketPrice: 7 },
-          AAPL: { regularMarketPrice: 7 },
+          ADBE: { regularMarketPrice: 7, regularMarketChange: 3 },
+          AAPL: { regularMarketPrice: 7, regularMarketChange: 3 },
         },
       ]);
 
@@ -1185,6 +1213,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'AAPL',
                   marketValue: 5,
+                  unrealizedDayPnl: { amount: 1, percent: 25 },
                   unrealizedPnl: { amount: 1, percent: 25 },
                 },
               },
@@ -1192,6 +1221,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'ADBE',
                   marketValue: 0,
+                  unrealizedDayPnl: { amount: 0, percent: 0 },
                   unrealizedPnl: { amount: 0, percent: 0 },
                 },
               },
@@ -1205,6 +1235,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'AAPL',
                   marketValue: 6,
+                  unrealizedDayPnl: { amount: 2, percent: 50 },
                   unrealizedPnl: { amount: 2, percent: 50 },
                 },
               },
@@ -1218,6 +1249,7 @@ describe('Subscription.positions', () => {
                 data: {
                   symbol: 'AAPL',
                   marketValue: 7,
+                  unrealizedDayPnl: { amount: 3, percent: 75 },
                   unrealizedPnl: { amount: 3, percent: 75 },
                 },
               },
@@ -1254,6 +1286,10 @@ describe('Subscription.positions', () => {
               data {
                 symbol
                 marketValue
+                unrealizedDayPnl {
+                  amount
+                  percent
+                }
                 unrealizedPnl {
                   amount
                   percent
@@ -1306,17 +1342,17 @@ describe('Subscription.positions', () => {
 
         await using _ = mockMarketDataControl.start([
           {
-            ADBE: { regularMarketPrice: 1.5 },
-            AAPL: { regularMarketPrice: 1.5 },
-            'USDEUR=X': { regularMarketPrice: 2 },
+            ADBE: { regularMarketPrice: 1.5, regularMarketChange: 1 },
+            AAPL: { regularMarketPrice: 1.5, regularMarketChange: 1 },
+            'USDEUR=X': { regularMarketPrice: 2, regularMarketChange: 2 },
           },
           {
-            ADBE: { regularMarketPrice: 1.6 },
-            'USDEUR=X': { regularMarketPrice: 2 },
+            ADBE: { regularMarketPrice: 1.6, regularMarketChange: 3 },
+            'USDEUR=X': { regularMarketPrice: 2, regularMarketChange: 4 },
           },
           {
-            AAPL: { regularMarketPrice: 1.6 },
-            'USDEUR=X': { regularMarketPrice: 2 },
+            AAPL: { regularMarketPrice: 1.6, regularMarketChange: 5 },
+            'USDEUR=X': { regularMarketPrice: 2, regularMarketChange: 6 },
           },
         ]);
 
@@ -1326,6 +1362,15 @@ describe('Subscription.positions', () => {
               positions {
                 data {
                   symbol
+                  unrealizedDayPnl {
+                    amount
+                    percent
+                    currencyAdjusted(currency: "EUR") {
+                      currency
+                      exchangeRate
+                      amount
+                    }
+                  }
                   unrealizedPnl {
                     amount
                     percent
@@ -1350,6 +1395,15 @@ describe('Subscription.positions', () => {
                 {
                   data: {
                     symbol: 'AAPL',
+                    unrealizedDayPnl: {
+                      amount: 2,
+                      percent: 83.333333333333,
+                      currencyAdjusted: {
+                        currency: 'EUR',
+                        exchangeRate: 2,
+                        amount: 4,
+                      },
+                    },
                     unrealizedPnl: {
                       amount: 0.6,
                       percent: 25,
@@ -1364,6 +1418,15 @@ describe('Subscription.positions', () => {
                 {
                   data: {
                     symbol: 'ADBE',
+                    unrealizedDayPnl: {
+                      amount: 2,
+                      percent: 90.909090909091,
+                      currencyAdjusted: {
+                        currency: 'EUR',
+                        exchangeRate: 2,
+                        amount: 4,
+                      },
+                    },
                     unrealizedPnl: {
                       amount: 0.8,
                       percent: 36.363636363636,
@@ -1384,6 +1447,15 @@ describe('Subscription.positions', () => {
                 {
                   data: {
                     symbol: 'ADBE',
+                    unrealizedDayPnl: {
+                      amount: 6,
+                      percent: 272.727272727273,
+                      currencyAdjusted: {
+                        currency: 'EUR',
+                        exchangeRate: 2,
+                        amount: 12,
+                      },
+                    },
                     unrealizedPnl: {
                       amount: 1,
                       percent: 45.454545454545,
@@ -1404,6 +1476,15 @@ describe('Subscription.positions', () => {
                 {
                   data: {
                     symbol: 'AAPL',
+                    unrealizedDayPnl: {
+                      amount: 10,
+                      percent: 416.666666666667,
+                      currencyAdjusted: {
+                        currency: 'EUR',
+                        exchangeRate: 2,
+                        amount: 20,
+                      },
+                    },
                     unrealizedPnl: {
                       amount: 0.8,
                       percent: 33.333333333333,
@@ -1421,434 +1502,6 @@ describe('Subscription.positions', () => {
         ]);
       });
     });
-  });
-
-  describe('With `unrealizedDayPnl` field', () => {
-    it('Emits updates correctly in conjunction with changes to position symbols market data', async () => {
-      await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
-      await PositionChangeModel.bulkCreate(
-        reusablePositions.slice(0, 2).map(h => ({
-          ...h,
-          totalLotCount: 1,
-          totalQuantity: 3,
-          totalPresentInvestedAmount: 30,
-        }))
-      );
-
-      const emissionsPromise = asyncPipe(
-        gqlWsClientIterateDisposable({
-          query: /* GraphQL */ `
-            subscription {
-              positions {
-                data {
-                  symbol
-                  unrealizedDayPnl {
-                    amount
-                    percent
-                  }
-                }
-              }
-            }
-          `,
-        }),
-        itTake(3),
-        itCollect
-      );
-
-      await using mockMarketData = mockMarketDataControl.start();
-      await mockMarketData.next([
-        {
-          ADBE: { regularMarketChange: 1 },
-          AAPL: { regularMarketChange: 1 },
-        },
-        {
-          ADBE: { regularMarketChange: 2 },
-        },
-        {
-          AAPL: { regularMarketChange: 2 },
-        },
-      ]);
-
-      const emissions = await emissionsPromise;
-
-      expect(emissions).toStrictEqual([
-        {
-          data: {
-            positions: [
-              {
-                data: {
-                  symbol: 'AAPL',
-                  unrealizedDayPnl: { amount: 3, percent: 10 },
-                },
-              },
-              {
-                data: {
-                  symbol: 'ADBE',
-                  unrealizedDayPnl: { amount: 3, percent: 10 },
-                },
-              },
-            ],
-          },
-        },
-        {
-          data: {
-            positions: [
-              {
-                data: {
-                  symbol: 'ADBE',
-                  unrealizedDayPnl: { amount: 6, percent: 20 },
-                },
-              },
-            ],
-          },
-        },
-        {
-          data: {
-            positions: [
-              {
-                data: {
-                  symbol: 'AAPL',
-                  unrealizedDayPnl: { amount: 6, percent: 20 },
-                },
-              },
-            ],
-          },
-        },
-      ]);
-    });
-
-    it('Emits updates correctly in conjunction with changes to underlying positions', async () => {
-      await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
-      await PositionChangeModel.bulkCreate(
-        reusablePositions.slice(0, 2).map(h => ({
-          ...h,
-          totalLotCount: 1,
-          totalQuantity: 2,
-          totalPresentInvestedAmount: 16,
-        }))
-      );
-
-      await using subscription = gqlWsClientIterateDisposable({
-        query: /* GraphQL */ `
-          subscription {
-            positions {
-              data {
-                symbol
-                unrealizedDayPnl {
-                  amount
-                  percent
-                }
-              }
-            }
-          }
-        `,
-      });
-
-      await using mockMarketData = mockMarketDataControl.start();
-      await mockMarketData.next([
-        {
-          ADBE: { regularMarketChange: 1 },
-          AAPL: { regularMarketChange: 1 },
-        },
-      ]);
-
-      const emissions: any[] = [(await subscription.next()).value];
-
-      for (const applyNextChanges of [
-        async () => {
-          await TradeRecordModel.create(reusableTradeDatas[2]);
-          await PositionChangeModel.create({
-            ...reusablePositions[2],
-            symbol: 'ADBE',
-            totalLotCount: 2,
-            totalQuantity: 4,
-            totalPresentInvestedAmount: 38,
-          });
-          await publishUserHoldingChangedRedisEvent({
-            ownerId: mockUserId1,
-            holdingStats: { set: [reusablePositions[2].symbol] },
-          });
-        },
-        async () => {
-          await TradeRecordModel.create(reusableTradeDatas[3]);
-          await PositionChangeModel.create({
-            ...reusablePositions[3],
-            symbol: 'AAPL',
-            totalLotCount: 3,
-            totalQuantity: 6,
-            totalPresentInvestedAmount: 58,
-          });
-          await publishUserHoldingChangedRedisEvent({
-            ownerId: mockUserId1,
-            holdingStats: { set: [reusablePositions[3].symbol] },
-          });
-        },
-      ]) {
-        await applyNextChanges();
-        const { value } = await subscription.next();
-        emissions.push(value);
-      }
-
-      expect(emissions).toStrictEqual([
-        {
-          data: {
-            positions: [
-              {
-                data: {
-                  symbol: 'AAPL',
-                  unrealizedDayPnl: { amount: 2, percent: 12.5 },
-                },
-              },
-              {
-                data: {
-                  symbol: 'ADBE',
-                  unrealizedDayPnl: { amount: 2, percent: 12.5 },
-                },
-              },
-            ],
-          },
-        },
-        {
-          data: {
-            positions: [
-              {
-                data: {
-                  symbol: 'ADBE',
-                  unrealizedDayPnl: { amount: 4, percent: 10.526315789474 },
-                },
-              },
-            ],
-          },
-        },
-        {
-          data: {
-            positions: [
-              {
-                data: {
-                  symbol: 'AAPL',
-                  unrealizedDayPnl: { amount: 6, percent: 10.344827586207 },
-                },
-              },
-            ],
-          },
-        },
-      ]);
-    });
-  });
-
-  it('When targeting empty past holdings, emits the initial message with zero amount and percent and then continues observing for any relevant future changes as in any regular holding', async () => {
-    await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
-    await PositionChangeModel.bulkCreate(
-      reusablePositions.slice(0, 2).map(h => ({
-        ...h,
-        totalLotCount: 0,
-        totalQuantity: 0,
-        totalPresentInvestedAmount: 0,
-      }))
-    );
-
-    await using subscription = gqlWsClientIterateDisposable({
-      query: /* GraphQL */ `
-        subscription {
-          positions {
-            data {
-              symbol
-              unrealizedDayPnl {
-                amount
-                percent
-              }
-            }
-          }
-        }
-      `,
-    });
-
-    await using mockMarketData = mockMarketDataControl.start();
-
-    const emissions = [(await subscription.next()).value];
-
-    for (const applyNextChanges of [
-      async () => {
-        await TradeRecordModel.create(reusableTradeDatas[2]);
-        await PositionChangeModel.create({
-          ...reusablePositions[2],
-          totalLotCount: 1,
-          totalQuantity: 2,
-          totalPresentInvestedAmount: 16,
-        });
-
-        await publishUserHoldingChangedRedisEvent({
-          ownerId: mockUserId1,
-          holdingStats: { set: [reusablePositions[2].symbol] },
-        });
-
-        await mockMarketData.next([{ ADBE: { regularMarketChange: 1 } }]);
-      },
-
-      async () => {
-        await TradeRecordModel.create(reusableTradeDatas[3]);
-        await PositionChangeModel.create({
-          ...reusablePositions[3],
-          totalLotCount: 2,
-          totalQuantity: 4,
-          totalPresentInvestedAmount: 36,
-        });
-
-        await publishUserHoldingChangedRedisEvent({
-          ownerId: mockUserId1,
-          holdingStats: { set: [reusablePositions[3].symbol] },
-        });
-
-        await mockMarketDataControl.whenNextMarketDataSymbolsRequested();
-        await mockMarketData.next([{ AAPL: { regularMarketChange: 2 } }]);
-      },
-    ]) {
-      await applyNextChanges();
-      const { value } = await subscription.next();
-      emissions.push(value);
-    }
-
-    expect(emissions).toStrictEqual([
-      {
-        data: {
-          positions: [
-            {
-              data: {
-                symbol: 'AAPL',
-                unrealizedDayPnl: { amount: 0, percent: 0 },
-              },
-            },
-            {
-              data: {
-                symbol: 'ADBE',
-                unrealizedDayPnl: { amount: 0, percent: 0 },
-              },
-            },
-          ],
-        },
-      },
-      {
-        data: {
-          positions: [
-            {
-              data: {
-                symbol: 'ADBE',
-                unrealizedDayPnl: { amount: 2, percent: 12.5 },
-              },
-            },
-          ],
-        },
-      },
-      {
-        data: {
-          positions: [
-            {
-              data: {
-                symbol: 'AAPL',
-                unrealizedDayPnl: { amount: 8, percent: 22.222222222222 },
-              },
-            },
-          ],
-        },
-      },
-    ]);
-  });
-
-  it('When targeting empty past holdings, changes in market data do not cause any further updates to be emitted', async () => {
-    await TradeRecordModel.bulkCreate(reusableTradeDatas.slice(0, 2));
-    await PositionChangeModel.bulkCreate([
-      {
-        ...reusablePositions[0],
-        totalLotCount: 0,
-        totalQuantity: 0,
-        totalPresentInvestedAmount: 0,
-      },
-      {
-        ...reusablePositions[1],
-        totalLotCount: 1,
-        totalQuantity: 1,
-        totalPresentInvestedAmount: 4,
-      },
-    ]);
-
-    await using subscription = gqlWsClientIterateDisposable({
-      query: /* GraphQL */ `
-        subscription {
-          positions {
-            data {
-              symbol
-              unrealizedDayPnl {
-                amount
-                percent
-              }
-            }
-          }
-        }
-      `,
-    });
-
-    await using mockMarketData = mockMarketDataControl.start();
-    await mockMarketData.next([
-      {
-        ADBE: { regularMarketChange: 1 },
-        AAPL: { regularMarketChange: 1 },
-      },
-      {
-        ADBE: { regularMarketChange: 2 },
-        AAPL: { regularMarketChange: 2 },
-      },
-      {
-        ADBE: { regularMarketChange: 3 },
-        AAPL: { regularMarketChange: 3 },
-      },
-    ]);
-
-    const emissions = await pipe(subscription, itTake(3), itCollect);
-
-    expect(emissions).toStrictEqual([
-      {
-        data: {
-          positions: [
-            {
-              data: {
-                symbol: 'AAPL',
-                unrealizedDayPnl: { amount: 1, percent: 25 },
-              },
-            },
-            {
-              data: {
-                symbol: 'ADBE',
-                unrealizedDayPnl: { amount: 0, percent: 0 },
-              },
-            },
-          ],
-        },
-      },
-      {
-        data: {
-          positions: [
-            {
-              data: {
-                symbol: 'AAPL',
-                unrealizedDayPnl: { amount: 2, percent: 50 },
-              },
-            },
-          ],
-        },
-      },
-      {
-        data: {
-          positions: [
-            {
-              data: {
-                symbol: 'AAPL',
-                unrealizedDayPnl: { amount: 3, percent: 75 },
-              },
-            },
-          ],
-        },
-      },
-    ]);
   });
 
   it('Emits updates correctly in conjunction with changes to position symbols whose market data cannot be found', async () => {
