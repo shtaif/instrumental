@@ -1,4 +1,3 @@
-import React from 'react';
 import { useLayoutEffect, useRef, ReactNode, type FC } from 'react';
 import { usePrevious } from '@uidotdev/usehooks';
 import './style.css';

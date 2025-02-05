@@ -1,4 +1,4 @@
-import React, { memo, type ReactElement } from 'react';
+import { memo, type ReactElement } from 'react';
 import { Typography } from 'antd';
 import { commonDecimalNumCurrencyFormat } from '../../utils/commonDecimalNumCurrencyFormat';
 import './style.css';

@@ -24,9 +24,11 @@ function LotItem(props: LotItemProps): React.ReactNode {
       <div className="pnl">
         <UnrealizedPnlDisplay
           className="pnl-display"
-          currency={props.currency}
-          unrealizedPnlAmount={props.unrealizedPnl?.amount}
-          unrealizedPnlFraction={props.unrealizedPnl?.fraction}
+          input={{
+            currency: props.currency,
+            unrealizedPnlAmount: props.unrealizedPnl?.amount,
+            unrealizedPnlFraction: props.unrealizedPnl?.fraction,
+          }}
         />
       </div>
     </Card>

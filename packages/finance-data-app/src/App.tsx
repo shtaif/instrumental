@@ -1,4 +1,3 @@
-import React from 'react';
 import { ConfigProvider as AntdConfigProvider, theme as antdTheme } from 'antd';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { SuperTokensWrapper } from 'supertokens-auth-react';
