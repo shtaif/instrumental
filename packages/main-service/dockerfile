@@ -1,11 +1,12 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-RUN npm i --global pnpm
+RUN apk add --no-cache jq
+RUN npm i -g $(jq -r '.packageManager' ./package.json)
 COPY . .
 RUN pnpm i --no-frozen-lockfile
 RUN \
   cd ./packages/main-service && \
-  pnpm deploy --prod --filter=main-service ./dist && \
+  pnpm deploy --prod --legacy --filter=main-service ./dist && \
   pnpm exec tsc --outDir ./dist && \
   pnpm exec copyfiles -u 1 ./src/**/*.graphql ./dist
 
