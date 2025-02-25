@@ -1,8 +1,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
-RUN apk add --no-cache jq
-RUN npm i -g $(jq -r '.packageManager' ./package.json)
 COPY . .
+RUN apk add --no-cache jq
+RUN npm i -g $(jq -r '.packageManager' ./packages/main-service/package.json)
 RUN pnpm i --no-frozen-lockfile
 RUN \
   cd ./packages/main-service && \
@@ -30,4 +30,5 @@ ENV \
   DB_LOGGING=$DB_LOGGING
 ENTRYPOINT ["bun", "./index.js"]
 
+# Best practices for using PNPM with docker monorepo:
 # https://github.com/pnpm/pnpm/issues/3114#issuecomment-1512805370
