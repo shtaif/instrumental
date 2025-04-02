@@ -14,14 +14,12 @@ import { env } from './utils/env.js';
 import { mainRedisClient, subscriberRedisClient } from './utils/redisClients.js';
 import { initDbSchema } from './db/index.js';
 import { initSuperTokens } from './initSuperTokens/index.js';
-import { createGraphqlAppMiddleware } from './graphqlAppMiddleware/index.js';
-import { graphqlWsServer } from './graphqlWsServer/index.js';
+import { createGraphqlAppMiddleware } from './graphqlStuff/graphqlAppMiddleware/index.js';
+import { graphqlWsServer } from './graphqlStuff/graphqlWsServer/index.js';
 
 export { startApp };
 
-async function startApp(): Promise<() => Promise<void>> {
-  // TODO: Completely rename whole monorepo as well as recurring terms from "finstrument" into "instrumental"
-
+async function startApp(): Promise<AsyncDisposable> {
   const supertokensAuthEndpointsBasePath = '/auth';
 
   initSuperTokens({
@@ -62,17 +60,15 @@ async function startApp(): Promise<() => Promise<void>> {
 
   await Promise.all([
     initDbSchema(),
-    mainRedisClient.connect().catch((err: any) => {
-      throw new Error(
-        `Failed to connect to Redis with url "${mainRedisClient.options?.url}" (should recheck all other options as well!)`,
-        { cause: err }
-      );
-    }),
-    subscriberRedisClient.connect().catch((err: any) => {
-      throw new Error(
-        `Failed to connect to Redis with url "${subscriberRedisClient.options?.url}" (should recheck all other options as well!)`,
-        { cause: err }
-      );
+    ...[mainRedisClient, subscriberRedisClient].map(async redis => {
+      try {
+        await redis.connect();
+      } catch (err) {
+        throw new Error(
+          `Failed to connect to Redis with url "${redis.options?.url}" (should recheck all other options as well!)`,
+          { cause: err }
+        );
+      }
     }),
   ]);
 
@@ -95,8 +91,13 @@ async function startApp(): Promise<() => Promise<void>> {
     }, GraphQL studio available via http://127.0.0.1:${env.PORT}/graphql`
   );
 
-  return async () => {
-    await Promise.all([httpServer.listening && httpTerminator.terminate(), gqlWsServer.dispose()]);
-    await Promise.all([mainRedisClient.disconnect(), subscriberRedisClient.disconnect()]);
+  return {
+    [Symbol.asyncDispose]: async () => {
+      await Promise.all([
+        httpServer.listening && httpTerminator.terminate(),
+        gqlWsServer.dispose(),
+      ]);
+      await Promise.all([mainRedisClient.disconnect(), subscriberRedisClient.disconnect()]);
+    },
   };
 }

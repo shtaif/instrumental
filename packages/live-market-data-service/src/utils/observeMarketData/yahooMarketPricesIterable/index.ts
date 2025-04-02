@@ -163,7 +163,9 @@ function yahooMarketPricesIterable(params: {
                         })();
                       }
 
-                      const initialMktData = await marketDataLoader.load(s.baseInstrumentSymbol);
+                      const initialMktData = await marketDataLoader.load(
+                        `${s.baseInstrumentSymbol}`
+                      );
 
                       if (!initialMktData) {
                         return (async function* () {})();

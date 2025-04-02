@@ -4,9 +4,9 @@ export default {
   watch: true,
   overwrite: true,
   emitLegacyCommonJSImports: false,
-  schema: '../main-service/src/initGqlSchema/**/*.graphql',
+  schema: '../main-service/src/graphqlStuff/initGqlSchema/**/*.graphql',
   generates: {
-    '../main-service/src/generated/graphql-schema.d.ts': {
+    '../main-service/src/graphqlStuff/initGqlSchema/generated/graphql-schema.d.ts': {
       plugins: [
         'typescript',
         'typescript-resolvers',
@@ -15,7 +15,7 @@ export default {
       config: {
         useIndexSignature: false,
         enumsAsTypes: true,
-        contextType: '../initGqlSchema/appGqlContext.ts#AppGqlContextValue',
+        contextType: '../graphqlStuff/initGqlSchema/appGqlContext.ts#AppGqlContextValue',
         defaultMapper: 'DeepPartial<{T}>',
         mappers: {
           // SymbolHolding: '../SymbolHoldingModel#SymbolHoldingModel',

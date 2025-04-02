@@ -10,7 +10,7 @@ import {
   type GraphQLNamedOutputType,
   type SelectionNode,
 } from 'graphql/index.js';
-import { type Resolver, type Resolvers } from '../../generated/graphql-schema.d.js';
+import { type Resolver, type Resolvers } from '../../graphqlStuff/initGqlSchema/generated/graphql-schema.js';
 
 export { gqlFormattedFieldSelectionTree };
 

@@ -1,6 +1,6 @@
 import { vi, type MockInstance } from 'vitest';
 import { asyncPipe } from 'shared-utils';
-import * as appGqlContextMod from '../../src/initGqlSchema/appGqlContext.js';
+import * as appGqlContextMod from '../../src/graphqlStuff/initGqlSchema/appGqlContext.js';
 
 export { mockGqlContext, unmockGqlContext };
 

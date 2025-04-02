@@ -3,10 +3,9 @@ import { useLocalStorage } from 'react-use';
 import { keyBy } from 'lodash-es';
 import { print as gqlPrint, type GraphQLError } from 'graphql';
 // import { useQuery, useSubscription } from '@apollo/client';
-import { useAsyncIterState, It, iterateFormatted } from 'react-async-iterators';
+import { useAsyncIterState, It, iterateFormatted, useAsyncIterEffect } from 'react-async-iterators';
 import { pipe } from 'shared-utils';
 import {
-  itCatch,
   itCombineLatest,
   itLazyDefer,
   itMap,
@@ -41,39 +40,42 @@ function UserMainScreen() {
     number | undefined
   >('last_fetched_positions_count', undefined);
 
-  const [portfolioCurrencySettingIterBase, setPortfolioCurrencySetting] =
-    useAsyncIterState<string>();
+  const [portfolioCurrencySettingIter, setPortfolioCurrencySetting] = (() => {
+    const [currencySettingIterBase, setCurrencySetting] = useAsyncIterState<string>();
 
-  const portfolioCurrencySettingIter = useMemo(() => {
-    const initialPortfolioCurrencySetting = getCurrentPortfolioCurrencySetting();
+    const currSettingIter = useMemo(() => {
+      const initialPortfolioCurrencySetting = getCurrentPortfolioCurrencySetting();
 
-    let currVal =
-      initialPortfolioCurrencySetting instanceof Promise
-        ? undefined
-        : initialPortfolioCurrencySetting;
+      let currVal =
+        initialPortfolioCurrencySetting instanceof Promise
+          ? undefined
+          : initialPortfolioCurrencySetting;
 
-    return pipe(
-      portfolioCurrencySettingIterBase,
-      myIterableCleanupPatcher(async function* (source) {
-        if (initialPortfolioCurrencySetting instanceof Promise) {
-          currVal = await initialPortfolioCurrencySetting;
-        }
-        yield currVal!;
-        for await (const nextCurrency of source) {
-          currVal = nextCurrency;
-          window.localStorage.setItem('portfolio_currency', JSON.stringify(nextCurrency));
-          yield nextCurrency;
-        }
-      }),
-      itShare(),
-      $ =>
-        Object.assign($, {
-          get value() {
-            return !currVal ? undefined : { current: currVal };
-          },
-        })
-    );
-  }, [portfolioCurrencySettingIterBase, setPortfolioCurrencySetting]);
+      return pipe(
+        currencySettingIterBase,
+        myIterableCleanupPatcher(async function* (source) {
+          if (initialPortfolioCurrencySetting instanceof Promise) {
+            currVal = await initialPortfolioCurrencySetting;
+          }
+          yield currVal!;
+          for await (const nextCurrency of source) {
+            currVal = nextCurrency;
+            window.localStorage.setItem('portfolio_currency', JSON.stringify(nextCurrency));
+            yield nextCurrency;
+          }
+        }),
+        itShare(),
+        $ =>
+          Object.assign($, {
+            get value() {
+              return !currVal ? undefined : { current: currVal };
+            },
+          })
+      );
+    }, [currencySettingIterBase]);
+
+    return [currSettingIter, setCurrencySetting];
+  })();
 
   const portfolioStatsIters = useMemo(
     () =>
@@ -94,13 +96,18 @@ function UserMainScreen() {
     );
     return pipe(
       itCombineLatest(createCombinedPositionsIter(), portfolioStatsIter),
-      itMap(([nextPositionUpdate, nextPortfolioUpdate]) => {
+      itTap(([nextPosUpdate], i) => {
+        if (i === 0) {
+          setLastFetchedPositionCount(nextPosUpdate.positions.length);
+        }
+      }),
+      itMap(([nextPosUpdate, nextPortfolioUpdate]) => {
         const compositionBySymbol = keyBy(
           nextPortfolioUpdate.stats?.compositionByHoldings,
           c => c.symbol
         );
 
-        const positionsWithPortfolioPortions = nextPositionUpdate.positions.map(update => ({
+        const positionsWithPortfolioPortions = nextPosUpdate.positions.map(update => ({
           ...update,
           portionOfPortfolioMarketValue: compositionBySymbol[update.symbol]
             ? compositionBySymbol[update.symbol].portionOfPortfolioMarketValue
@@ -108,27 +115,27 @@ function UserMainScreen() {
         }));
 
         const errors =
-          !nextPositionUpdate.errors?.length && !nextPortfolioUpdate.errors?.length
+          !nextPosUpdate.errors?.length && !nextPortfolioUpdate.errors?.length
             ? undefined
-            : [...(nextPositionUpdate.errors ?? []), ...(nextPortfolioUpdate.errors ?? [])];
+            : [...(nextPosUpdate.errors ?? []), ...(nextPortfolioUpdate.errors ?? [])];
 
         return {
           errors,
           positions: positionsWithPortfolioPortions,
         };
       }),
-      itTap((next, i) => {
-        if (i === 0) {
-          setLastFetchedPositionCount(next.positions.length);
-        }
-      }),
-      itCatch(err => {
-        serverConnectionErrorNotification.show();
-        throw err;
-      }),
       itShare()
     );
   }, []);
+
+  useAsyncIterEffect([positionsIter], next => [
+    () => {
+      if (next.error) {
+        serverConnectionErrorNotification.show();
+      }
+    },
+    [next.error],
+  ]);
 
   return (
     <div className="cmp-user-main-screen">
