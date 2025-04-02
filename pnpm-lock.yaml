@@ -59,8 +59,8 @@ importers:
         specifier: ^18.3.1
         version: 18.3.1
       react-async-iterators:
-        specifier: file:../../../react-async-iterators/react-async-iterators-0.10.2.tgz
-        version: file:../react-async-iterators/react-async-iterators-0.10.2.tgz(react@18.3.1)
+        specifier: ^0.10.2
+        version: 0.10.2(react@18.3.1)
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
@@ -4855,9 +4855,8 @@ packages:
       react: '>=16.9.0'
       react-dom: '>=16.9.0'
 
-  react-async-iterators@file:../react-async-iterators/react-async-iterators-0.10.2.tgz:
-    resolution: {integrity: sha512-XSkW5K59iCwn29ouoXZF2KOezy5MeDyHiv375YhnJmQpWVBoIMtsOK4RbypdYxyMPWtFbiLXZA5gXSkj+SvUOw==, tarball: file:../react-async-iterators/react-async-iterators-0.10.2.tgz}
-    version: 0.10.2
+  react-async-iterators@0.10.2:
+    resolution: {integrity: sha512-Gm71Jkffy6jaxJOERLuaWcY7MYRdeVuFJrWkdV/YZ1aM2RNPljA3yAHutDYZwbg+hFuy8m3Pp52dVtTy4uZRHg==}
     peerDependencies:
       react: '>=17'
 
@@ -11708,7 +11707,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  react-async-iterators@file:../react-async-iterators/react-async-iterators-0.10.2.tgz(react@18.3.1):
+  react-async-iterators@0.10.2(react@18.3.1):
     dependencies:
       react: 18.3.1
 
