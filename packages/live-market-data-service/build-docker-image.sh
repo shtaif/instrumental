@@ -1,7 +1,7 @@
 #!/bin/bash
 
 docker buildx build \
-  -t finstrument/live-market-data-service \
+  -t instrumental/live-market-data-service \
   -f "$(dirname "$0")"/dockerfile \
   "$(dirname "$0")"/../../.
 
@@ -16,5 +16,5 @@ docker buildx build \
 #   -e SYMBOL_MARKET_DATA_POLLING_INTERVAL_MS="1000" \
 #   -e ENABLE_NGROK_TUNNEL="false" \
 #   -e NGROK_TUNNEL_AUTH_TOKEN="2Q3iVlAlTbyIqNIH9uXFekgnFg8_5hW5Ub9arpd4oMhwQHbLE" \
-#   --name finstrument-live-market-data-service \
-#   finstrument/live-market-data-service
+#   --name instrumental-live-market-data-service \
+#   instrumental/live-market-data-service

@@ -11,8 +11,17 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * 3. It does not support dead code elimination, so it will add unused operations.
  *
  * Therefore it is highly recommended to use the babel or swc plugin for production.
+ * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
-const documents = {
+type Documents = {
+    "\n  mutation SetTradesMutation($input: SetTradesInput!) {\n    setTrades(input: $input) {\n      tradesAddedCount\n      tradesModifiedCount\n      tradesRemovedCount\n    }\n  }\n": typeof types.SetTradesMutationDocument,
+    "\n  subscription PositionDataSubscription {\n    positions {\n      type\n      data {\n        symbol\n        totalQuantity\n        breakEvenPrice\n        marketValue\n        priceData {\n          marketState\n          currency\n          regularMarketTime\n          regularMarketPrice\n        }\n        unrealizedDayPnl {\n          amount\n          fraction\n        }\n        unrealizedPnl {\n          amount\n          fraction\n        }\n      }\n    }\n  }\n": typeof types.PositionDataSubscriptionDocument,
+    "\n  subscription PortfolioStatsDataSubscription($currencyToCombineIn: String!) {\n    combinedPortfolioStats(currencyToCombineIn: $currencyToCombineIn) {\n      currencyCombinedBy\n      costBasis\n      marketValue\n      unrealizedPnl {\n        amount\n        fraction\n      }\n      compositionByHoldings {\n        symbol\n        portionOfPortfolioMarketValue\n      }\n    }\n  }\n": typeof types.PortfolioStatsDataSubscriptionDocument,
+    "\n  query LotsQuery($symbol: ID!) {\n    lots(filters: { symbols: [$symbol] }) {\n      id\n      openedAt\n    }\n  }\n": typeof types.LotsQueryDocument,
+    "\n  subscription LotDataSubscription($ids: [ID!]!) {\n    lots(filters: { ids: $ids }) {\n      type\n      data {\n        id\n        originalQuantity\n        remainingQuantity\n        unrealizedPnl {\n          amount\n          fraction\n        }\n      }\n    }\n  }\n": typeof types.LotDataSubscriptionDocument,
+    "\n  query CountryLocaleCurrencyQuery($countryCode: ID!) {\n    countryLocale(countryCode: $countryCode) {\n      currencyCode\n    }\n  }\n": typeof types.CountryLocaleCurrencyQueryDocument,
+};
+const documents: Documents = {
     "\n  mutation SetTradesMutation($input: SetTradesInput!) {\n    setTrades(input: $input) {\n      tradesAddedCount\n      tradesModifiedCount\n      tradesRemovedCount\n    }\n  }\n": types.SetTradesMutationDocument,
     "\n  subscription PositionDataSubscription {\n    positions {\n      type\n      data {\n        symbol\n        totalQuantity\n        breakEvenPrice\n        marketValue\n        priceData {\n          marketState\n          currency\n          regularMarketTime\n          regularMarketPrice\n        }\n        unrealizedDayPnl {\n          amount\n          fraction\n        }\n        unrealizedPnl {\n          amount\n          fraction\n        }\n      }\n    }\n  }\n": types.PositionDataSubscriptionDocument,
     "\n  subscription PortfolioStatsDataSubscription($currencyToCombineIn: String!) {\n    combinedPortfolioStats(currencyToCombineIn: $currencyToCombineIn) {\n      currencyCombinedBy\n      costBasis\n      marketValue\n      unrealizedPnl {\n        amount\n        fraction\n      }\n      compositionByHoldings {\n        symbol\n        portionOfPortfolioMarketValue\n      }\n    }\n  }\n": types.PortfolioStatsDataSubscriptionDocument,

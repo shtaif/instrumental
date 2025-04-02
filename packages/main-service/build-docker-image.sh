@@ -1,7 +1,7 @@
 #!/bin/bash
 
 docker buildx build \
-  -t finstrument/main-service \
+  -t instrumental/main-service \
   -f "$(dirname "$0")"/dockerfile \
   "$(dirname "$0")"/../../.
 
@@ -19,5 +19,5 @@ docker buildx build \
 #   -e ENABLE_NGROK_TUNNEL="false" \
 #   -e NGROK_TUNNEL_AUTH_TOKEN="2Q3iVlAlTbyIqNIH9uXFekgnFg8_5hW5Ub9arpd4oMhwQHbLE" \
 #   -e DB_LOGGING="false" \
-#   --name finstrument-main-service \
-#   finstrument/main-service
+#   --name instrumental-main-service \
+#   instrumental/main-service
